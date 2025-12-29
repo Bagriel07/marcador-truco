@@ -1,4 +1,4 @@
-const cacheName = 'truco-v2';
+const cacheName = 'truco-v3';
 const assets = [
   './',
   './index.html',
@@ -23,4 +23,5 @@ self.addEventListener('fetch', evt => {
       return res || fetch(evt.request);
     })
   );
+
 });
