@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Marcador Truco</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#7FA383">
+    <link rel="apple-touch-icon" href="icon.png"> 
+</head>
+<body>
+
+    <div id="setup-screen" class="container">
+        <h1>NOVO JOGO</h1>
+        
+        <div class="input-group">
+            <label>Nome do Time 1 (Nós)</label>
+            <input type="text" id="input-time1" placeholder="Ex: Os Patos">
+        </div>
+
+        <div class="input-group">
+            <label>Nome do Time 2 (Eles)</label>
+            <input type="text" id="input-time2" placeholder="Ex: Os Marrecos">
+        </div>
+
+        <div class="input-group">
+            <label>A partida vai até:</label>
+            <input type="number" id="input-max" value="12">
+        </div>
+
+        <button class="start-btn" onclick="iniciarJogo()">COMEÇAR PARTIDA</button>
+    </div>
+
+    <div id="game-screen" class="container hidden">
+        <div class="header-info">
+            <span id="display-meta">Meta: 12</span>
+            <button class="small-btn" onclick="encerrarJogo()">Sair</button>
+        </div>
+        
+        <div class="placar">
+            <div class="time">
+                <h2 id="nome-time1">NÓS</h2>
+                <div class="pontos" id="score-time1">0</div>
+                <div class="botoes">
+                    <button onclick="mudarPontos(1, -1)">-1</button>
+                    <button onclick="mudarPontos(1, 1)">+1</button>
+                    <button class="truco-btn" onclick="mudarPontos(1, 3)">+3</button>
+                </div>
+            </div>
+            
+            <div class="divider"></div>
+
+            <div class="time">
+                <h2 id="nome-time2">ELES</h2>
+                <div class="pontos" id="score-time2">0</div>
+                <div class="botoes">
+                    <button onclick="mudarPontos(2, -1)">-1</button>
+                    <button onclick="mudarPontos(2, 1)">+1</button>
+                    <button class="truco-btn" onclick="mudarPontos(2, 3)">+3</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js');
+        }
+    </script>
+</body>
+</html>

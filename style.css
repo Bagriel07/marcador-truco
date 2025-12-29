@@ -1,0 +1,146 @@
+:root {
+    --bg-color: #7FA383; /* Verde Musgo Pastel */
+    --text-color: #ffffff;
+    --btn-bg: rgba(255, 255, 255, 0.2);
+    --btn-border: #ffffff;
+    --accent-color: #F4E06D; /* Amarelo suave para botão truco */
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-align: center;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    transition: opacity 0.3s ease;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Estilos da Tela de Configuração */
+h1 { margin-bottom: 30px; letter-spacing: 2px; }
+
+.input-group {
+    margin-bottom: 20px;
+    width: 80%;
+    max-width: 300px;
+    text-align: left;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 2px solid rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.1);
+    color: white;
+    font-size: 1.1rem;
+    outline: none;
+    box-sizing: border-box; /* Garante que padding não estoure a largura */
+}
+
+.input-group input::placeholder { color: rgba(255,255,255,0.6); }
+
+.start-btn {
+    background-color: white;
+    color: var(--bg-color);
+    border: none;
+    padding: 15px 40px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-radius: 50px;
+    margin-top: 20px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* Estilos da Tela do Jogo */
+.header-info {
+    position: absolute;
+    top: 20px;
+    width: 90%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    opacity: 0.8;
+}
+
+.small-btn {
+    background: transparent;
+    border: 1px solid white;
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.placar {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+}
+
+.time { width: 45%; }
+.time h2 { font-size: 1.3rem; margin-bottom: 0; word-wrap: break-word;}
+
+.pontos { 
+    font-size: 5.5rem; 
+    font-weight: bold; 
+    margin: 5px 0 20px 0; 
+    text-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+}
+
+.botoes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 0 10px;
+}
+
+button {
+    background: var(--btn-bg);
+    border: 1px solid var(--btn-border);
+    color: white;
+    font-size: 1.2rem;
+    padding: 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+button:active { background: white; color: var(--bg-color); }
+
+.truco-btn { 
+    grid-column: span 2; 
+    background: var(--accent-color); 
+    color: #4a5d4c; 
+    border: none; 
+    font-weight: 800; 
+}
+
+.divider { width: 1px; height: 60%; background: rgba(255,255,255,0.3); position: absolute; z-index: -1;}
