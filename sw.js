@@ -1,9 +1,10 @@
-const cacheName = 'truco-v1';
+const cacheName = 'truco-v2';
 const assets = [
   './',
   './index.html',
   './style.css',
   './script.js',
+  './regras.html',
   './manifest.json',
   './icon.png'
 ];

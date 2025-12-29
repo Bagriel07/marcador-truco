@@ -1,10 +1,10 @@
 {
   "name": "Marcador Truco",
-  "short_name": "Truco",
+  "short_name": "Marcador Truco",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#7FA383",
-  "theme_color": "#7FA383",
+  "background_color": "#354F38", 
+  "theme_color": "#354F38",
   "icons": [
     {
       "src": "icon.png",
