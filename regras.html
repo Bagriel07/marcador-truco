@@ -2,183 +2,83 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Regras Completas Truco Espanhol</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Regras Truco</title>
     <link rel="stylesheet" href="style.css">
-    <meta name="theme-color" content="#354F38">
+    <meta name="theme-color" content="#2d3a28">
 </head>
 <body class="rules-page">
     
-    <div class="container scrollable">
-        <h1>REGRAS OFICIAIS<br><small style="font-size: 0.6em; opacity: 0.8;">Truco Espanhol / Gaudério</small></h1>
-        
-        <button class="small-btn back-btn" onclick="window.history.back()">⬅ VOLTAR AO JOGO</button>
+    <div class="rules-header">
+        <button onclick="window.history.back()">Voltar</button>
+        <span>Regras</span>
+        <div style="width: 50px;"></div> </div>
 
-        <div class="rules-content">
-            
-            <details open>
-                <summary>🏆 Hierarquia das Cartas (Manilhas)</summary>
-                <p>No Truco Espanhol, as manilhas são <strong>fixas</strong>. Da maior para a menor:</p>
-                <div class="tabela-cartas">
-                    <div class="carta destaque">1 ♠ (Espadão)</div>
-                    <div class="carta destaque">1 ♣ (Bastião)</div>
-                    <div class="carta destaque">7 ♠ (Sete Espada)</div>
-                    <div class="carta destaque">7 ♦ (Sete Ouro)</div>
-                    <div class="carta">Todos os 3</div>
-                    <div class="carta">Todos os 2</div>
-                    <div class="carta">1 ♥ e 1 ♦ (Pocas)</div>
-                    <div class="carta">12 (Reis)</div>
-                    <div class="carta">11 (Cavalos)</div>
-                    <div class="carta">10 (Sotas)</div>
-                    <div class="carta">7 ♥ e 7 ♣ (Pocas)</div>
-                    <div class="carta">6, 5, 4 (Baralho Limpo)</div>
+    <div class="rules-scroll-area">
+        <h1 class="rules-title">Truco Gaudério</h1>
+        
+        <div class="ios-list-group">
+            <details class="ios-list-item">
+                <summary>🏆 Hierarquia das Cartas</summary>
+                <div class="details-content">
+                    <p>Da maior para a menor:</p>
+                    <ul>
+                        <li><strong>1 ♠ (Espadão)</strong></li>
+                        <li><strong>1 ♣ (Bastião)</strong></li>
+                        <li><strong>7 ♠ (Sete Espada)</strong></li>
+                        <li><strong>7 ♦ (Sete Ouro)</strong></li>
+                        <li>Todos os 3</li>
+                        <li>Todos os 2</li>
+                        <li>1 ♥ e 1 ♦ (Pocas)</li>
+                        <li>12, 11, 10 (Figuras)</li>
+                        <li>7 ♥ e 7 ♣ (Pocas)</li>
+                        <li>6, 5, 4</li>
+                    </ul>
                 </div>
             </details>
 
-            <details>
-                <summary>🔄 Dinâmica da Rodada (Mãos)</summary>
-                <p>Cada partida é disputada em "mãos". Ganha a rodada quem vencer <strong>2 de 3 mãos</strong>.</p>
-                <h3>Regras de Empate (Canga)</h3>
-                <ul>
-                    <li><strong>Empate na 1ª mão:</strong> Vence quem ganhar a 2ª.</li>
-                    <li><strong>Empate na 2ª mão:</strong> Vence quem ganhou a 1ª.</li>
-                    <li><strong>Empate na 1ª e na 2ª:</strong> Vence quem ganhar a 3ª.</li>
-                    <li><strong>Empate nas 3 mãos:</strong> Vence o "Mão" (quem começou jogando a rodada).</li>
-                    <li><strong>G ganhou 1ª, Empate na 2ª:</strong> G vence.</li>
-                </ul>
-                <h3>Pontuação do Jogo</h3>
-                <ul>
-                    <li><strong>Vitória simples:</strong> 1 Ponto</li>
-                    <li><strong>Truco aceito:</strong> 2 Pontos</li>
-                    <li><strong>Retruco aceito:</strong> 3 Pontos</li>
-                    <li><strong>Vale Quatro aceito:</strong> 4 Pontos</li>
-                </ul>
+            <details class="ios-list-item">
+                <summary>🔥 Envido (Pontos)</summary>
+                <div class="details-content">
+                    <p>Duas cartas do mesmo naipe somam +20.</p>
+                    <p><strong>Exemplo:</strong> 7 e 6 do mesmo naipe = 33 pontos.</p>
+                    <div class="table-row"><span>Envido</span> <span>2 pts</span></div>
+                    <div class="table-row"><span>Real Envido</span> <span>3 pts</span></div>
+                    <div class="table-row"><span>Falta Envido</span> <span>O que falta</span></div>
+                </div>
             </details>
 
-            <details>
-                <summary>🔥 O Envido (Pontos)</summary>
-                <p>É a disputa para ver quem tem a combinação de cartas mais alta. <strong>Deve ser cantado antes de jogar a primeira carta na mesa.</strong></p>
-                
-                <h3>Como calcular</h3>
-                <p>Soma-se o valor de duas cartas do <strong>mesmo naipe</strong> + 20.</p>
-                <ul>
-                    <li>As figuras (10, 11, 12) valem 0 para a soma.</li>
-                    <li>Se tiver cartas de naipes diferentes, vale a carta mais alta (ex: um 7 sobe vale 7 pontos).</li>
-                    <li><strong>Exemplo:</strong> 7 de Espadas + 6 de Espadas = 33 (Máximo).</li>
-                    <li><strong>Exemplo:</strong> 11 de Ouros + 5 de Ouros = 25.</li>
-                </ul>
-
-                <h3>Valores das Apostas</h3>
-                <table class="tabela-pontos">
-                    <tr><td><strong>Envido</strong></td><td>2 pts (se aceito)</td></tr>
-                    <tr><td><strong>Real Envido</strong></td><td>3 pts (se aceito)</td></tr>
-                    <tr><td><strong>Falta Envido</strong></td><td>Pontos que faltam p/ acabar a partida*</td></tr>
-                </table>
-                <p><small>*Se ambos estiverem no "ruim" (antes da metade), vale a partida toda.</small></p>
-
-                <h3>Recusa (Não quero)</h3>
-                <ul>
-                    <li>Recusar Envido: Adversário ganha 1 pt.</li>
-                    <li>Recusar Real Envido: Adversário ganha 1 pt (se direto) ou 2 pts (se repique).</li>
-                    <li>Recusar Falta Envido: Adversário ganha 1 pt (ou os pontos acumulados até ali).</li>
-                </ul>
-            </details>
-
-            <details>
+            <details class="ios-list-item">
                 <summary>🌸 A Flor</summary>
-                <p>Quando o jogador possui <strong>3 cartas do mesmo naipe</strong>.</p>
-                <ul>
-                    <li>O jogador <strong>DEVE</strong> cantar a Flor antes de jogar, senão perde o direito.</li>
-                    <li><strong>A Flor vale 3 pontos</strong> diretos.</li>
-                    <li>A Flor <strong>anula o Envido</strong> (não se joga Envido se houver Flor, a menos que combinado diferente).</li>
-                </ul>
-                <h3>Contra-Flor</h3>
-                <p>Se o adversário também tiver Flor, ele pode cantar:</p>
-                <ul>
-                    <li><strong>Contra-Flor:</strong> Dobra a aposta (6 pts no total).</li>
-                    <li><strong>Contra-Flor ao Resto:</strong> Vale o jogo (ou o que falta para quem está ganhando).</li>
-                    <li><strong>Com Flor me achico:</strong> O adversário desiste da disputa de Flor, e você leva os 3 pts da sua + 1 pt de "envido implícito" (total 4) ou apenas os 3 da sua (depende da região). Regra padrão: Leva 3 pontos.</li>
-                </ul>
+                <div class="details-content">
+                    <p>Três cartas do mesmo naipe.</p>
+                    <p>Vale <strong>3 pontos</strong> diretos e anula o Envido.</p>
+                </div>
             </details>
-
-            <details>
-                <summary>👥 Modalidades (1x1, 2x2, 3x3)</summary>
-                
-                <h3>1x1 (Mano a Mano)</h3>
-                <p>Disputa direta. O carteador dá 3 cartas para cada um. O adversário é o "Mão" (começa).</p>
-
-                <h3>2x2 (Duplas)</h3>
-                <p>Parceiros sentam frente a frente. A "Mão" roda em sentido anti-horário.</p>
-                <p><strong>Sinais:</strong> É permitido passar sinais faciais para o parceiro, desde que não mostre as cartas.</p>
-
-                <h3>3x3 (Pica-Pau / Testa de Ferro)</h3>
-                <p>O modo mais complexo e estratégico.</p>
-                <ul>
-                    <li><strong>O Testa (Pica-Pau):</strong> Em cada rodada, um jogador é o "Testa". Ele joga contra o "Testa" da outra equipe.</li>
-                    <li><strong>Os Pé-de-Amigo (Pontas):</strong> Os outros dois jogadores da equipe apenas <strong>assistem</strong> e ajudam. Eles podem ver as cartas do Testa, conversar e montar a estratégia, mas quem joga a carta na mesa é o Testa.</li>
-                    <li><strong>Rodízio:</strong> A cada nova mão que se baralha, a posição do Testa roda, para que todos joguem.</li>
-                    <li><strong>Atenção:</strong> Nas regras oficiais gaúchas, joga-se os 6 ao mesmo tempo (circular), similar ao 2x2. O modo "Testa" descrito acima é uma variação comum (Testa de Ferro) para organizar a bagunça. <em>Combine antes qual modo 3x3 será usado!</em></li>
-                </ul>
-            </details>
-
-            <details>
-                <summary>🚨 Casos Especiais (Mão de 11)</summary>
-                <h3>Mão de 11 (ou 23)</h3>
-                <p>Quando uma dupla chega a 11 pontos (num jogo de 12) ou 23 (num jogo de 24).</p>
-                <ul>
-                    <li>A dupla pode olhar as cartas um do outro.</li>
-                    <li>Eles decidem se <strong>VÃO</strong> ou <strong>NÃO</strong> jogar.</li>
-                    <li>Se forem: A mão vale 3 pontos (ou o que falta para acabar).</li>
-                    <li>Se correrem: A outra dupla ganha 1 ponto.</li>
-                    <li><strong>Importante:</strong> Na mão de 11 não se pode cantar Envido, nem Flor, nem Truco. É proibido. Quem cantar perde a partida.</li>
-                </ul>
-                <h3>Mão de Ferro (11 a 11)</h3>
-                <p>Se o jogo empatar em 11 a 11, joga-se a Mão de Ferro.</p>
-                <ul>
-                    <li>Ninguém vê as cartas (carta coberta).</li>
-                    <li>Vira-se a carta na sorte.</li>
-                    <li>Quem vencer a rodada ganha o jogo.</li>
-                </ul>
-            </details>
-
         </div>
+
+        <h2 class="rules-subtitle">Modalidades</h2>
+        <div class="ios-list-group">
+            <details class="ios-list-item">
+                <summary>👥 1x1, 2x2 e 3x3</summary>
+                <div class="details-content">
+                    <p><strong>1x1:</strong> Disputa direta.</p>
+                    <p><strong>2x2:</strong> Parceiros de frente. Sinais permitidos.</p>
+                    <p><strong>3x3:</strong> Joga-se o "Testa" (um contra um) ou circular, dependendo do combinado.</p>
+                </div>
+            </details>
+            <details class="ios-list-item">
+                <summary>🚨 Mão de 11</summary>
+                <div class="details-content">
+                    <p>Se a dupla tem 11 (ou 23) pontos, pode olhar as cartas.</p>
+                    <p><strong>Vale 3 pts.</strong> Se correr, perde 1.</p>
+                    <p>Proibido cantar Envido/Flor/Truco nesta mão.</p>
+                </div>
+            </details>
+        </div>
+
+        <div class="footer-space"></div>
     </div>
 
-    <style>
-        /* CSS Adicional para esta página interna */
-        .tabela-cartas {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 5px;
-            margin-top: 10px;
-        }
-        .carta {
-            background: rgba(255,255,255,0.1);
-            padding: 8px;
-            border-radius: 5px;
-            font-size: 0.9rem;
-        }
-        .carta.destaque {
-            background: var(--accent-color);
-            color: #2e4a30;
-            font-weight: bold;
-        }
-        .tabela-pontos {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        .tabela-pontos td {
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-            padding: 8px;
-            text-align: left;
-        }
-        h3 {
-            color: var(--accent-color);
-            border-bottom: 2px solid rgba(255,255,255,0.1);
-            padding-bottom: 5px;
-            margin-top: 25px;
-        }
-    </style>
 </body>
 </html>

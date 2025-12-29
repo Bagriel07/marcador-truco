@@ -3,8 +3,8 @@
   "short_name": "Marcador Truco",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#354F38", 
-  "theme_color": "#354F38",
+  "background_color": "#2d3a28",
+  "theme_color": "#2d3a28",
   "icons": [
     {
       "src": "icon.png",

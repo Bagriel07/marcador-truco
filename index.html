@@ -2,67 +2,75 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Marcador Truco</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Truco Gaudério</title>
+    
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#354F38">
+    <meta name="theme-color" content="#2d3a28">
     <link rel="apple-touch-icon" href="icon.png"> 
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
+    
+    <canvas id="confetti-canvas"></canvas>
 
-    <div id="setup-screen" class="container">
-        <h1>NOVO JOGO</h1>
+    <div id="setup-screen" class="container fade-in">
+        <div class="ios-header">
+            <h1>Novo Jogo</h1>
+        </div>
         
-        <div class="input-group">
-            <label>Nome do Time 1 (Nós)</label>
-            <input type="text" id="input-time1" placeholder="Ex: Os Patos">
+        <div class="glass-card setup-card">
+            <div class="input-group ios-input">
+                <input type="text" id="input-time1" placeholder="Nome do Time 1 (Nós)">
+            </div>
+            <div class="separator"></div>
+            <div class="input-group ios-input">
+                <input type="text" id="input-time2" placeholder="Nome do Time 2 (Eles)">
+            </div>
         </div>
 
-        <div class="input-group">
-            <label>Nome do Time 2 (Eles)</label>
-            <input type="text" id="input-time2" placeholder="Ex: Os Marrecos">
+        <div class="glass-card setup-card" style="margin-top: 20px;">
+             <label class="ios-label">Pontuação Alvo</label>
+            <div class="segmented-control">
+                <button class="segment-opt active" onclick="selPonto(12, this)">12</button>
+                <button class="segment-opt" onclick="selPonto(24, this)">24</button>
+                <button class="segment-opt" onclick="selPonto(30, this)">30</button>
+                <div class="segment-glider"></div>
+            </div>
+             <input type="hidden" id="input-max" value="12">
         </div>
 
-        <div class="input-group">
-            <label>A partida vai até:</label>
-            <input type="number" id="input-max" value="12">
-        </div>
-
-        <button class="start-btn" onclick="iniciarJogo()">COMEÇAR PARTIDA</button>
-
-        <a href="regras.html" style="margin-top: 20px; text-decoration: none;">
-            <button class="small-btn">📖 VER REGRAS</button>
-        </a>
-
+        <button class="ios-btn primary action-margin" onclick="iniciarJogo()">Iniciar Partida</button>
+        <a href="regras.html" class="ios-link">Ver Regras do Truco</a>
     </div>
 
-    <div id="game-screen" class="container hidden">
-        <div class="header-info">
-            <span id="display-meta">Meta: 12</span>
-            <button class="small-btn" onclick="encerrarJogo()">Sair</button>
+    <div id="game-screen" class="container hidden game-layout">
+        <div class="ios-top-bar">
+            <button class="ios-icon-btn close" onclick="encerrarJogo()">✕</button>
+            <span id="display-meta" class="meta-badge">Meta: 12</span>
+            <button class="ios-icon-btn undo" onclick="desfazer()" id="btn-undo" disabled>↺</button>
         </div>
         
-        <div class="placar">
-            <div class="time">
+        <div class="placar-grid">
+            <div class="time-card ios-card" id="card-time1">
                 <h2 id="nome-time1">NÓS</h2>
-                <div class="pontos" id="score-time1">0</div>
-                <div class="botoes">
-                    <button onclick="mudarPontos(1, -1)">-1</button>
-                    <button onclick="mudarPontos(1, 1)">+1</button>
-                    <button class="truco-btn" onclick="mudarPontos(1, 3)">+3</button>
+                <div class="pontos-display ios-font" id="score-time1">0</div>
+                <div class="ios-controls ios-segmented">
+                    <button class="ctrl-btn minus" onclick="mudarPontos(1, -1)">−</button>
+                    <div class="sep-vert"></div>
+                    <button class="ctrl-btn plus" onclick="mudarPontos(1, 1)">+</button>
                 </div>
             </div>
             
-            <div class="divider"></div>
-
-            <div class="time">
+            <div class="time-card ios-card" id="card-time2">
                 <h2 id="nome-time2">ELES</h2>
-                <div class="pontos" id="score-time2">0</div>
-                <div class="botoes">
-                    <button onclick="mudarPontos(2, -1)">-1</button>
-                    <button onclick="mudarPontos(2, 1)">+1</button>
-                    <button class="truco-btn" onclick="mudarPontos(2, 3)">+3</button>
+                <div class="pontos-display ios-font" id="score-time2">0</div>
+                <div class="ios-controls ios-segmented">
+                    <button class="ctrl-btn minus" onclick="mudarPontos(2, -1)">−</button>
+                    <div class="sep-vert"></div>
+                    <button class="ctrl-btn plus" onclick="mudarPontos(2, 1)">+</button>
                 </div>
             </div>
         </div>
