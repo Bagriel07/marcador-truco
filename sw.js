@@ -1,4 +1,4 @@
-const cacheName = 'truco-v16'; // Versão final correção layout
+const cacheName = 'truco-v17'; // Versão final correção layout
 const assets = [
   './',
   './index.html',
@@ -28,4 +28,5 @@ self.addEventListener('fetch', evt => {
       return res;
     }).catch(() => caches.match(evt.request))
   );
+
 });
