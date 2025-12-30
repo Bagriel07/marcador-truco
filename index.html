@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Truco Gaudério</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
@@ -15,73 +15,75 @@
     
     <canvas id="confetti-canvas"></canvas>
 
-    <div id="setup-screen" class="container fade-in">
-        <div class="content-wrapper">
-            <div class="ios-header compact">
-                <h1>Novo Jogo</h1>
-            </div>
-            
-            <div class="glass-card setup-card">
-                <div class="input-group ios-input">
-                    <input type="text" id="input-time1" placeholder="Nós (Time da Casa)">
-                </div>
-                <div class="separator"></div>
-                <div class="input-group ios-input">
-                    <input type="text" id="input-time2" placeholder="Eles (Visitantes)">
-                </div>
-            </div>
-
-            <div class="glass-card setup-card" style="margin-top: 15px;">
-                <label class="ios-label">Pontuação Alvo</label>
-                <div class="segmented-control">
-                    <button class="segment-opt active" onclick="selPonto(12, this)">12</button>
-                    <button class="segment-opt" onclick="selPonto(24, this)">24</button>
-                    <button class="segment-opt" onclick="selPonto(30, this)">30</button>
-                    <div class="segment-glider"></div>
-                </div>
-                <input type="hidden" id="input-max" value="12">
-            </div>
-
-            <button id="btn-start" class="ios-btn primary" onclick="iniciarJogo()">Iniciar Partida</button>
-            
-            <a href="regras.html" class="ios-link">Ver Regras Oficiais</a>
-        </div>
-    </div>
-
-    <div id="game-screen" class="container hidden game-layout">
-        <div class="ios-top-bar">
-            <button class="ios-icon-btn close" onclick="confirmarSaida()">✕</button>
-            <span id="display-meta" class="meta-badge">Meta: 12</span>
-            <button class="ios-icon-btn undo" onclick="desfazer()" id="btn-undo" disabled>↺</button>
-        </div>
+    <div id="app-root">
         
-        <div class="placar-grid">
-            <div class="time-card ios-card" id="card-time1">
-                <h2 id="nome-time1">NÓS</h2>
-                <div class="pontos-display ios-font" id="score-time1">0</div>
-                <div class="ios-controls ios-segmented">
-                    <button class="ctrl-btn minus" onclick="mudarPontos(1, -1)">−</button>
-                    <div class="sep-vert"></div>
-                    <button class="ctrl-btn plus" onclick="mudarPontos(1, 1)">+</button>
+        <div id="setup-screen" class="screen fade-in">
+            <div class="content-wrapper">
+                <div class="ios-header compact">
+                    <h1>Novo Jogo</h1>
                 </div>
+                
+                <div class="glass-card setup-card">
+                    <div class="input-group ios-input">
+                        <input type="text" id="input-time1" placeholder="Nós (Time da Casa)">
+                    </div>
+                    <div class="separator"></div>
+                    <div class="input-group ios-input">
+                        <input type="text" id="input-time2" placeholder="Eles (Visitantes)">
+                    </div>
+                </div>
+
+                <div class="glass-card setup-card" style="margin-top: 15px;">
+                    <label class="ios-label">Pontuação Alvo</label>
+                    <div class="segmented-control">
+                        <button class="segment-opt active" onclick="selPonto(12, this)">12</button>
+                        <button class="segment-opt" onclick="selPonto(24, this)">24</button>
+                        <button class="segment-opt" onclick="selPonto(30, this)">30</button>
+                        <div class="segment-glider"></div>
+                    </div>
+                    <input type="hidden" id="input-max" value="12">
+                </div>
+
+                <button id="btn-start" class="ios-btn primary" onclick="iniciarJogo()">Iniciar Partida</button>
+                
+                <a href="regras.html" class="ios-link">Ver Regras Oficiais</a>
+            </div>
+        </div>
+
+        <div id="game-screen" class="screen hidden game-layout">
+            <div class="ios-top-bar">
+                <button class="ios-icon-btn close" onclick="confirmarSaida()">✕</button>
+                <span id="display-meta" class="meta-badge">Meta: 12</span>
+                <button class="ios-icon-btn undo" onclick="desfazer()" id="btn-undo" disabled>↺</button>
             </div>
             
-            <div class="time-card ios-card" id="card-time2">
-                <h2 id="nome-time2">ELES</h2>
-                <div class="pontos-display ios-font" id="score-time2">0</div>
-                <div class="ios-controls ios-segmented">
-                    <button class="ctrl-btn minus" onclick="mudarPontos(2, -1)">−</button>
-                    <div class="sep-vert"></div>
-                    <button class="ctrl-btn plus" onclick="mudarPontos(2, 1)">+</button>
+            <div class="placar-grid">
+                <div class="time-card ios-card" id="card-time1">
+                    <h2 id="nome-time1">NÓS</h2>
+                    <div class="pontos-display ios-font" id="score-time1">0</div>
+                    <div class="ios-controls ios-segmented">
+                        <button class="ctrl-btn minus" onclick="mudarPontos(1, -1)">−</button>
+                        <div class="sep-vert"></div>
+                        <button class="ctrl-btn plus" onclick="mudarPontos(1, 1)">+</button>
+                    </div>
+                </div>
+                
+                <div class="time-card ios-card" id="card-time2">
+                    <h2 id="nome-time2">ELES</h2>
+                    <div class="pontos-display ios-font" id="score-time2">0</div>
+                    <div class="ios-controls ios-segmented">
+                        <button class="ctrl-btn minus" onclick="mudarPontos(2, -1)">−</button>
+                        <div class="sep-vert"></div>
+                        <button class="ctrl-btn plus" onclick="mudarPontos(2, 1)">+</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div id="custom-modal" class="modal-overlay hidden">
+    </div> <div id="custom-modal" class="modal-overlay hidden">
         <div class="modal-box glass-card">
             <h3 id="modal-title">Título</h3>
-            <p id="modal-msg">Mensagem aqui</p>
+            <p id="modal-msg">Mensagem</p>
             <div class="modal-actions">
                 <button id="modal-btn-cancel" class="modal-btn secondary">Cancelar</button>
                 <button id="modal-btn-confirm" class="modal-btn primary">Confirmar</button>
