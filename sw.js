@@ -1,4 +1,4 @@
-const cacheName = 'truco-v11'; // V11 para regras completas
+const cacheName = 'truco-v12'; // Versão 12 - Correção de tela cortada
 const assets = [
   './',
   './index.html',
