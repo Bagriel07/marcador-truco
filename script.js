@@ -1,17 +1,26 @@
+// Configuração Global
+const STORAGE_KEY = 'truco_apple_v1'; // Nova chave para limpar bugs antigos
 let jogoAtivo = false;
 let nome1 = "Nós", nome2 = "Eles";
 let maxPontos = 12;
 let score1 = 0, score2 = 0;
 let historico = [];
 
+// Inicialização segura
 window.onload = function() {
-    carregarEstado();
-    const defaultBtn = document.querySelector('.segment-opt.active');
-    if(defaultBtn) moveGlider(defaultBtn);
-    window.confetti = { start: startConfetti, stop: stopConfetti };
+    try {
+        carregarEstado();
+        const defaultBtn = document.querySelector('.segment-opt.active');
+        if(defaultBtn) moveGlider(defaultBtn);
+        window.confetti = { start: startConfetti, stop: stopConfetti };
+    } catch (e) {
+        console.error("Erro ao iniciar:", e);
+        // Se der erro, reseta tudo para garantir que o app abra
+        localStorage.removeItem(STORAGE_KEY);
+    }
 };
 
-// --- Configuração ---
+// --- Lógica de Interface ---
 function selPonto(valor, btn) {
     document.getElementById('input-max').value = valor;
     document.querySelectorAll('.segment-opt').forEach(b => b.classList.remove('active'));
@@ -21,27 +30,32 @@ function selPonto(valor, btn) {
 
 function moveGlider(targetBtn) {
     const glider = document.querySelector('.segment-glider');
-    const index = Array.from(targetBtn.parentNode.children).indexOf(targetBtn);
-    glider.style.transform = `translateX(${index * 100}%)`;
+    if(glider && targetBtn) {
+        const index = Array.from(targetBtn.parentNode.children).indexOf(targetBtn);
+        glider.style.transform = `translateX(${index * 100}%)`;
+    }
 }
 
 function iniciarJogo() {
+    console.log("Iniciando jogo..."); // Log para debug
     const n1 = document.getElementById('input-time1').value.trim();
     const n2 = document.getElementById('input-time2').value.trim();
+    
     nome1 = n1 || "Nós";
     nome2 = n2 || "Eles";
-    maxPontos = parseInt(document.getElementById('input-max').value);
+    maxPontos = parseInt(document.getElementById('input-max').value) || 12;
     
     score1 = 0; score2 = 0; historico = [];
     jogoAtivo = true;
     
     salvarTudo();
     atualizarTela();
+    
+    // Troca de telas
     document.getElementById('setup-screen').classList.add('hidden');
     document.getElementById('game-screen').classList.remove('hidden');
 }
 
-// --- Jogo ---
 function mudarPontos(time, qtd) {
     historico.push({ s1: score1, s2: score2 });
     if (historico.length > 5) historico.shift();
@@ -86,7 +100,7 @@ function atualizarTela() {
     if (score2 > score1) document.getElementById('card-time2').classList.add('winning');
 }
 
-// --- Sistema de Modais (Pop-ups Bonitos) ---
+// --- Modais ---
 function abrirModal(titulo, mensagem, textoConfirmar, acaoConfirmar, esconderCancelar = false) {
     const modal = document.getElementById('custom-modal');
     document.getElementById('modal-title').innerText = titulo;
@@ -104,7 +118,6 @@ function abrirModal(titulo, mensagem, textoConfirmar, acaoConfirmar, esconderCan
         btnCancel.onclick = () => modal.classList.add('hidden');
     }
 
-    // Clone para remover eventos antigos
     const novoBtn = btnConfirm.cloneNode(true);
     btnConfirm.parentNode.replaceChild(novoBtn, btnConfirm);
 
@@ -120,7 +133,7 @@ function confirmarSaida() {
     abrirModal("Sair do Jogo?", "O jogo atual será perdido.", "Sair", () => {
         jogoAtivo = false;
         historico = [];
-        localStorage.removeItem('truco_pro_estado');
+        localStorage.removeItem(STORAGE_KEY);
         location.reload();
     });
 }
@@ -132,19 +145,22 @@ function mostrarVitoria(vencedor) {
     setTimeout(() => {
         abrirModal("Fim de Jogo!", vencedor.toUpperCase() + " VENCERAM!", "Novo Jogo", () => {
             stopConfetti();
-            confirmarSaida(); // Reinicia
-        }, true); // True esconde o botão cancelar
+            confirmarSaida();
+        }, true);
     }, 500);
 }
 
 // --- Persistência ---
 function salvarTudo() {
     const estado = { ativo: jogoAtivo, n1: nome1, n2: nome2, max: maxPontos, s1: score1, s2: score2, hist: historico };
-    localStorage.setItem('truco_pro_estado', JSON.stringify(estado));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(estado));
 }
 
 function carregarEstado() {
-    const salvo = JSON.parse(localStorage.getItem('truco_pro_estado'));
+    const salvoStr = localStorage.getItem(STORAGE_KEY);
+    if (!salvoStr) return;
+    
+    const salvo = JSON.parse(salvoStr);
     if (salvo && salvo.ativo) {
         nome1 = salvo.n1; nome2 = salvo.n2; maxPontos = salvo.max;
         score1 = salvo.s1; score2 = salvo.s2; historico = salvo.hist || [];
@@ -162,6 +178,7 @@ let confettiActive = false;
 const particles = [];
 function startConfetti() {
     const canvas = document.getElementById('confetti-canvas');
+    if(!canvas) return;
     confettiCtx = canvas.getContext('2d');
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
     confettiActive = true;
