@@ -2,126 +2,162 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Regras Truco</title>
     <link rel="stylesheet" href="style.css">
     <meta name="theme-color" content="#2d3a28">
 </head>
-<body class="rules-page">
-    
-    <div class="rules-header">
-        <button onclick="window.history.back()">Voltar</button>
-        <span>Regras Oficiais</span>
-        <div style="width: 50px;"></div> 
-    </div>
+<body>
 
-    <div class="rules-scroll-area">
-        <h1 class="rules-title">Truco Gaudério</h1>
-        
-        <h2 class="rules-subtitle">Baralho & Hierarquia</h2>
-        <div class="ios-list-group">
-            <details class="ios-list-item">
-                <summary>🏆 Força das Cartas (Manilhas)</summary>
-                <div class="details-content">
-                    <p>Da maior para a menor:</p>
-                    <div class="card-rank">
-                        <div class="rank-row"><span>1 ♠</span> <strong>Espadão</strong></div>
-                        <div class="rank-row"><span>1 ♣</span> <strong>Bastião</strong></div>
-                        <div class="rank-row"><span>7 ♠</span> <strong>Sete Espada</strong></div>
-                        <div class="rank-row"><span>7 ♦</span> <strong>Sete Ouro</strong></div>
-                        <div class="rank-divider"></div>
-                        <div class="rank-row"><span>3</span> <span>Todos os Três</span></div>
-                        <div class="rank-row"><span>2</span> <span>Todos os Dois</span></div>
-                        <div class="rank-row"><span>1 ♥ ♦</span> <span>Ases (Pocas)</span></div>
-                        <div class="rank-row"><span>12</span> <span>Reis</span></div>
-                        <div class="rank-row"><span>11</span> <span>Cavalos</span></div>
-                        <div class="rank-row"><span>10</span> <span>Sotas</span></div>
-                        <div class="rank-row"><span>7 ♥ ♣</span> <span>Setes (Pocas)</span></div>
-                        <div class="rank-row"><span>6, 5, 4</span> <span>Baralho Limpo</span></div>
-                    </div>
+    <div id="app-root">
+        <div class="screen rules-screen">
+            
+            <div class="ios-navbar">
+                <button class="nav-btn" onclick="window.location.href='index.html'">
+                    <span class="chevron-left">‹</span> Voltar
+                </button>
+                <span class="nav-title">Regras</span>
+                <div class="nav-placeholder"></div>
+            </div>
+
+            <div class="scroll-content">
+                <h1 class="page-title">Truco Gaudério</h1>
+                <p class="page-subtitle">Guia oficial e hierarquia</p>
+
+                <span class="group-label">Hierarquia das Cartas (Manilhas)</span>
+                <div class="ios-list-group glass-card">
+                    <details class="ios-list-item">
+                        <summary>
+                            <div class="icon-box">🏆</div>
+                            <span class="item-title">Força das Cartas</span>
+                            <span class="chevron-right">›</span>
+                        </summary>
+                        <div class="details-body">
+                            <div class="card-rank-grid">
+                                <div class="rank-row high">
+                                    <span class="card-face">1♠</span> <span class="card-name">Espadão</span>
+                                </div>
+                                <div class="rank-row high">
+                                    <span class="card-face">1♣</span> <span class="card-name">Bastião</span>
+                                </div>
+                                <div class="rank-row high">
+                                    <span class="card-face">7♠</span> <span class="card-name">Sete Espada</span>
+                                </div>
+                                <div class="rank-row high">
+                                    <span class="card-face">7♦</span> <span class="card-name">Sete Ouro</span>
+                                </div>
+                                <div class="divider"></div>
+                                <div class="rank-row"><span class="card-face">3</span> <span>Todos os Três</span></div>
+                                <div class="rank-row"><span class="card-face">2</span> <span>Todos os Dois</span></div>
+                                <div class="rank-row"><span class="card-face">1</span> <span>Ases (Pocas)</span></div>
+                                <div class="rank-row"><span class="card-face">12</span> <span>Reis</span></div>
+                                <div class="rank-row"><span class="card-face">11</span> <span>Cavalos</span></div>
+                                <div class="rank-row"><span class="card-face">10</span> <span>Sotas</span></div>
+                                <div class="rank-row"><span class="card-face">7</span> <span>Setes (Pocas)</span></div>
+                                <div class="rank-row low"><span class="card-face">6-4</span> <span>Baralho Limpo</span></div>
+                            </div>
+                        </div>
+                    </details>
                 </div>
-            </details>
-        </div>
 
-        <h2 class="rules-subtitle">Pontos e Envido</h2>
-        <div class="ios-list-group">
-            <details class="ios-list-item">
-                <summary>🔥 O Envido</summary>
-                <div class="details-content">
-                    <p>Disputa de pontos antes da 1ª carta. Soma-se duas cartas do mesmo naipe + 20.</p>
-                    <p class="note">Ex: 7 e 6 do mesmo naipe = 33 pts.</p>
+                <span class="group-label">Pontos e Envido</span>
+                <div class="ios-list-group glass-card">
                     
-                    <div class="info-table">
-                        <div class="table-row"><span>Envido</span> <span class="val">2 pts</span></div>
-                        <div class="table-row"><span>Real Envido</span> <span class="val">3 pts</span></div>
-                        <div class="table-row"><span>Falta Envido</span> <span class="val">Falta p/ terminar*</span></div>
-                    </div>
-                    <p class="small-text">*Se ambos estiverem "no ruim" (antes da metade), vale a partida toda.</p>
-                </div>
-            </details>
+                    <details class="ios-list-item">
+                        <summary>
+                            <div class="icon-box">🔥</div>
+                            <span class="item-title">O Envido</span>
+                            <span class="chevron-right">›</span>
+                        </summary>
+                        <div class="details-body">
+                            <p class="desc">Soma-se duas cartas do mesmo naipe + 20.</p>
+                            <div class="key-value-row">
+                                <span>Envido</span> <strong>2 pts</strong>
+                            </div>
+                            <div class="key-value-row">
+                                <span>Real Envido</span> <strong>3 pts</strong>
+                            </div>
+                            <div class="key-value-row">
+                                <span>Falta Envido</span> <strong>Falta p/ terminar</strong>
+                            </div>
+                        </div>
+                    </details>
 
-            <details class="ios-list-item">
-                <summary>🌸 A Flor</summary>
-                <div class="details-content">
-                    <p>Ter 3 cartas do mesmo naipe na mão.</p>
-                    <div class="info-table">
-                        <div class="table-row"><span>Flor</span> <span class="val">3 pts</span></div>
-                        <div class="table-row"><span>Contra-Flor</span> <span class="val">6 pts</span></div>
-                        <div class="table-row"><span>C. Flor Resto</span> <span class="val">Vale o Jogo</span></div>
-                    </div>
-                    <p class="note">Atenção: A Flor anula o Envido!</p>
+                    <div class="list-separator"></div>
+
+                    <details class="ios-list-item">
+                        <summary>
+                            <div class="icon-box">🌸</div>
+                            <span class="item-title">A Flor</span>
+                            <span class="chevron-right">›</span>
+                        </summary>
+                        <div class="details-body">
+                            <p class="desc">3 cartas do mesmo naipe. A Flor anula o Envido.</p>
+                            <div class="key-value-row">
+                                <span>Flor</span> <strong>3 pts</strong>
+                            </div>
+                            <div class="key-value-row">
+                                <span>Contra-Flor</span> <strong>6 pts</strong>
+                            </div>
+                        </div>
+                    </details>
+
+                    <div class="list-separator"></div>
+
+                    <details class="ios-list-item">
+                        <summary>
+                            <div class="icon-box">⚡</div>
+                            <span class="item-title">Truco</span>
+                            <span class="chevron-right">›</span>
+                        </summary>
+                        <div class="details-body">
+                            <div class="key-value-row">
+                                <span>Truco</span> <strong>2 pts</strong>
+                            </div>
+                            <div class="key-value-row">
+                                <span>Retruco</span> <strong>3 pts</strong>
+                            </div>
+                            <div class="key-value-row">
+                                <span>Vale Quatro</span> <strong>4 pts</strong>
+                            </div>
+                        </div>
+                    </details>
                 </div>
-            </details>
-            
-            <details class="ios-list-item">
-                <summary>⚡ Pontos do Truco</summary>
-                <div class="details-content">
-                    <div class="info-table">
-                        <div class="table-row"><span>Truco</span> <span class="val">2 pts</span></div>
-                        <div class="table-row"><span>Retruco</span> <span class="val">3 pts</span></div>
-                        <div class="table-row"><span>Vale Quatro</span> <span class="val">4 pts</span></div>
-                    </div>
+
+                <span class="group-label">Situações de Mesa</span>
+                <div class="ios-list-group glass-card">
+                    <details class="ios-list-item">
+                        <summary>
+                            <div class="icon-box">🚨</div>
+                            <span class="item-title">Mão de 11 (ou 23)</span>
+                            <span class="chevron-right">›</span>
+                        </summary>
+                        <div class="details-body">
+                            <p class="desc">Pode-se olhar as cartas do parceiro. <strong>Proibido</strong> cantar Envido, Flor ou Truco (perde-se a mão se cantar).</p>
+                        </div>
+                    </details>
+                    
+                    <div class="list-separator"></div>
+
+                    <details class="ios-list-item">
+                        <summary>
+                            <div class="icon-box">⚖️</div>
+                            <span class="item-title">Empate (Canga)</span>
+                            <span class="chevron-right">›</span>
+                        </summary>
+                        <div class="details-body">
+                            <ul class="clean-list">
+                                <li><strong>1ª Empatada:</strong> Quem ganhar a 2ª leva.</li>
+                                <li><strong>2ª Empatada:</strong> Quem ganhou a 1ª leva.</li>
+                                <li><strong>3ª Empatada:</strong> Quem ganhou a 1ª leva.</li>
+                                <li><strong>Tudo Empatado:</strong> Ganha o mão.</li>
+                            </ul>
+                        </div>
+                    </details>
                 </div>
-            </details>
+
+                <div style="height: 40px;"></div> </div>
         </div>
-
-        <h2 class="rules-subtitle">Regras da Mesa</h2>
-        <div class="ios-list-group">
-            <details class="ios-list-item">
-                <summary>👥 Modalidades (1x1 a 3x3)</summary>
-                <div class="details-content">
-                    <p><strong>1x1 (Mano a Mano):</strong> Jogo direto.</p>
-                    <hr class="sub-divider">
-                    <p><strong>2x2 (Duplas):</strong> Parceiros frente a frente. Sinais são permitidos (sem mostrar cartas).</p>
-                    <hr class="sub-divider">
-                    <p><strong>3x3 (Pica-Pau/Testa):</strong> Variação comum onde joga-se um ponta contra ponta (Testa de Ferro) enquanto os parceiros ajudam. Na regra oficial gaúcha, jogam todos em roda.</p>
-                </div>
-            </details>
-
-            <details class="ios-list-item">
-                <summary>🚨 Mão de 11 (ou 23)</summary>
-                <div class="details-content">
-                    <p>Quando a dupla atinge 11 pts (no jogo de 12) ou 23 (no jogo de 24):</p>
-                    <ul>
-                        <li>Podem olhar as cartas do parceiro.</li>
-                        <li>Se jogarem: Vale 3 pontos (ou vitória).</li>
-                        <li>Se correrem: Adversário ganha 1 ponto.</li>
-                        <li><strong>Proibido:</strong> Cantar Envido, Flor ou Truco nesta mão (perde o jogo se cantar).</li>
-                    </ul>
-                </div>
-            </details>
-            
-            <details class="ios-list-item">
-                <summary>⚖️ Empate (Canga)</summary>
-                <div class="details-content">
-                    <p><strong>Empatou 1ª:</strong> Quem ganhar a 2ª leva.</p>
-                    <p><strong>Empatou 2ª:</strong> Quem ganhou a 1ª leva.</p>
-                    <p><strong>Empatou 3ª:</strong> Quem ganhou a 1ª leva.</p>
-                    <p><strong>Empatou as 3:</strong> Ganha o mão (quem começou).</p>
-                </div>
-            </details>
-        </div>
-
-        <div style="height: 60px;"></div> </div>
+    </div>
 </body>
 </html>

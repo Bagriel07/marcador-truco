@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'truco_v3_resp'; // Nova chave para evitar conflitos antigos
+const STORAGE_KEY = 'truco_v4_reset'; // Atualizei a chave para garantir funcionamento novo
 
 let jogoAtivo = false;
 let nome1 = "Nós", nome2 = "Eles";
@@ -9,14 +9,17 @@ let historico = [];
 window.onload = function() {
     try {
         carregarEstado();
+        // Restaura o botão de pontos ativo visualmente
         const defaultBtn = document.querySelector(`.segment-opt[onclick*="${maxPontos}"]`) || document.querySelector('.segment-opt');
         if(defaultBtn) {
+            document.querySelectorAll('.segment-opt').forEach(b => b.classList.remove('active'));
             defaultBtn.classList.add('active');
-            moveGlider(defaultBtn);
+            // Pequeno delay para o layout carregar antes de mover o glider
+            setTimeout(() => moveGlider(defaultBtn), 100);
         }
         window.confetti = { start: startConfetti, stop: stopConfetti };
     } catch (e) {
-        console.warn("Resetando estado devido a erro:", e);
+        console.warn("Resetando estado:", e);
         localStorage.removeItem(STORAGE_KEY);
     }
 };
@@ -24,7 +27,7 @@ window.onload = function() {
 // --- Interface ---
 function selPonto(valor, btn) {
     document.getElementById('input-max').value = valor;
-    maxPontos = valor; // Atualiza variável global imediatamente para UI responder
+    maxPontos = valor; 
     document.querySelectorAll('.segment-opt').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     moveGlider(btn);
@@ -33,7 +36,6 @@ function selPonto(valor, btn) {
 function moveGlider(targetBtn) {
     const glider = document.querySelector('.segment-glider');
     if(glider && targetBtn) {
-        // Calcula a posição baseado no índice do botão relativo aos irmãos (ignorando o glider)
         const buttons = Array.from(targetBtn.parentNode.querySelectorAll('button'));
         const index = buttons.indexOf(targetBtn);
         glider.style.transform = `translateX(${index * 100}%)`;
@@ -46,9 +48,11 @@ function iniciarJogo() {
     
     nome1 = n1 || "Nós";
     nome2 = n2 || "Eles";
-    // maxPontos já está atualizado pelo selPonto
     
-    score1 = 0; score2 = 0; historico = [];
+    // Garante que começa zerado
+    score1 = 0; 
+    score2 = 0; 
+    historico = [];
     jogoAtivo = true;
     
     salvarTudo();
@@ -59,22 +63,18 @@ function iniciarJogo() {
 }
 
 function mudarPontos(time, qtd) {
-    // Salva histórico
     historico.push({ s1: score1, s2: score2 });
-    if (historico.length > 10) historico.shift(); // Aumentei um pouco o histórico
+    if (historico.length > 10) historico.shift(); 
     document.getElementById('btn-undo').disabled = false;
 
-    // Vibração segura (alguns browsers bloqueiam ou não têm API)
     try { if (navigator.vibrate) navigator.vibrate(40); } catch(e){}
 
     if (time === 1) score1 += qtd;
     else score2 += qtd;
 
-    // Limites
     if (score1 < 0) score1 = 0;
     if (score2 < 0) score2 = 0;
 
-    // Checagem de vitória
     let venceu = false;
     if (score1 >= maxPontos) { score1 = maxPontos; mostrarVitoria(nome1); venceu = true;}
     else if (score2 >= maxPontos) { score2 = maxPontos; mostrarVitoria(nome2); venceu = true;}
@@ -91,20 +91,22 @@ function desfazer() {
     
     if (historico.length === 0) document.getElementById('btn-undo').disabled = true;
     
-    // Se estava em tela de vitória, remove confetes se voltar
-    stopConfetti();
-    
+    stopConfetti(); // Para confetes se desfazer a vitória
     salvarTudo();
     atualizarTela();
 }
 
 function atualizarTela() {
+    // Atualiza números
     document.getElementById('score-time1').innerText = score1;
     document.getElementById('score-time2').innerText = score2;
+    
+    // Atualiza nomes e meta
     document.getElementById('nome-time1').innerText = nome1;
     document.getElementById('nome-time2').innerText = nome2;
     document.getElementById('display-meta').innerText = "Meta: " + maxPontos;
 
+    // Cores de vitória
     const card1 = document.getElementById('card-time1');
     const card2 = document.getElementById('card-time2');
     
@@ -115,7 +117,45 @@ function atualizarTela() {
     if (score2 > score1) card2.classList.add('winning');
 }
 
-// --- Modais e Controle ---
+// --- Lógica de Reset e Saída ---
+
+// Função dedicada para ZERAR TUDO e voltar ao início
+function resetarPartida() {
+    jogoAtivo = false;
+    score1 = 0;
+    score2 = 0;
+    historico = [];
+    localStorage.removeItem(STORAGE_KEY);
+    
+    // Atualiza a tela para mostrar "0" antes mesmo de trocar de tela
+    atualizarTela();
+    
+    // Troca as telas
+    document.getElementById('game-screen').classList.add('hidden');
+    document.getElementById('setup-screen').classList.remove('hidden');
+}
+
+function confirmarSaida() {
+    // Aqui ainda pergunta, pois o usuário clicou no "X" durante o jogo
+    abrirModal("Sair do Jogo?", "O placar atual será apagado.", "Sair", () => {
+        resetarPartida();
+    });
+}
+
+function mostrarVitoria(vencedor) {
+    startConfetti();
+    try { if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 500]); } catch(e){}
+    
+    setTimeout(() => {
+        // Ao clicar em "Novo Jogo" aqui, NÃO PERGUNTA NADA, apenas reseta.
+        abrirModal("Fim de Jogo!", vencedor.toUpperCase() + " VENCERAM!", "Novo Jogo", () => {
+            stopConfetti();
+            resetarPartida(); 
+        }, true);
+    }, 600);
+}
+
+// --- Modais ---
 function abrirModal(titulo, mensagem, textoConfirmar, acaoConfirmar, esconderCancelar = false) {
     const modal = document.getElementById('custom-modal');
     document.getElementById('modal-title').innerText = titulo;
@@ -132,7 +172,6 @@ function abrirModal(titulo, mensagem, textoConfirmar, acaoConfirmar, esconderCan
         btnCancel.onclick = () => modal.classList.add('hidden');
     }
 
-    // Clona para remover listeners antigos
     const novoBtn = btnConfirm.cloneNode(true);
     btnConfirm.parentNode.replaceChild(novoBtn, btnConfirm);
     
@@ -142,27 +181,6 @@ function abrirModal(titulo, mensagem, textoConfirmar, acaoConfirmar, esconderCan
     };
     
     modal.classList.remove('hidden');
-}
-
-function confirmarSaida() {
-    abrirModal("Sair do Jogo?", "O placar atual será perdido.", "Sair", () => {
-        jogoAtivo = false;
-        localStorage.removeItem(STORAGE_KEY);
-        location.reload();
-    });
-}
-
-function mostrarVitoria(vencedor) {
-    startConfetti();
-    try { if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 500]); } catch(e){}
-    
-    // Pequeno delay para usuário ver o número final antes do modal
-    setTimeout(() => {
-        abrirModal("Fim de Jogo!", vencedor.toUpperCase() + " VENCERAM!", "Novo Jogo", () => {
-            stopConfetti();
-            confirmarSaida();
-        }, true);
-    }, 600);
 }
 
 // --- Persistência ---
@@ -190,31 +208,17 @@ function carregarEstado() {
     }
 }
 
-// --- Confetes (Otimizado) ---
+// --- Confetes ---
 let confettiCtx, confettiActive = false, particles = [], animationId;
 function startConfetti() {
     const canvas = document.getElementById('confetti-canvas');
     if(!canvas) return;
-    
-    // Garante tamanho correto
-    canvas.width = window.innerWidth; 
-    canvas.height = window.innerHeight;
-    
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
     confettiCtx = canvas.getContext('2d');
-    particles = [];
-    confettiActive = true;
-    
+    particles = []; confettiActive = true;
     const colors = ['#f00', '#0f0', '#00f', '#ff0', '#0ff', '#f0f', '#fff'];
-    
     for(let i=0; i<120; i++) { 
-        particles.push({ 
-            x: Math.random() * canvas.width, 
-            y: Math.random() * canvas.height - canvas.height, 
-            color: colors[Math.floor(Math.random() * colors.length)], 
-            size: Math.random() * 8 + 4, 
-            speed: Math.random() * 6 + 3,
-            wobble: Math.random() * 10
-        }); 
+        particles.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height - canvas.height, color: colors[Math.floor(Math.random() * colors.length)], size: Math.random() * 8 + 4, speed: Math.random() * 6 + 3, wobble: Math.random() * 10 }); 
     }
     animateConfetti();
 }
@@ -222,26 +226,15 @@ function startConfetti() {
 function animateConfetti() {
     if(!confettiActive) return;
     confettiCtx.clearRect(0,0, window.innerWidth, window.innerHeight);
-    
     particles.forEach(p => { 
-        p.y += p.speed; 
-        p.x += Math.sin(p.wobble) * 2;
-        p.wobble += 0.1;
-        
-        if(p.y > window.innerHeight) {
-            p.y = -20; 
-            p.x = Math.random() * window.innerWidth;
-        }
-        
-        confettiCtx.fillStyle = p.color; 
-        confettiCtx.fillRect(p.x, p.y, p.size, p.size); 
+        p.y += p.speed; p.x += Math.sin(p.wobble) * 2; p.wobble += 0.1;
+        if(p.y > window.innerHeight) { p.y = -20; p.x = Math.random() * window.innerWidth; }
+        confettiCtx.fillStyle = p.color; confettiCtx.fillRect(p.x, p.y, p.size, p.size); 
     });
-    
     animationId = requestAnimationFrame(animateConfetti);
 }
 
 function stopConfetti() { 
-    confettiActive = false; 
-    cancelAnimationFrame(animationId);
+    confettiActive = false; cancelAnimationFrame(animationId);
     if(confettiCtx) confettiCtx.clearRect(0,0, window.innerWidth, window.innerHeight); 
 }
