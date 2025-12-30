@@ -1,5 +1,4 @@
-const cacheName = 'truco-v8'; // V6 para o visual novo!
-// ... (mantenha o código de limpeza que te passei na última resposta)
+const cacheName = 'truco-v11'; // V11 para regras completas
 const assets = [
   './',
   './index.html',
@@ -12,36 +11,21 @@ const assets = [
 
 self.addEventListener('install', evt => {
   self.skipWaiting();
-  evt.waitUntil(
-    caches.open(cacheName).then(cache => {
-      return cache.addAll(assets);
-    })
-  );
+  evt.waitUntil(caches.open(cacheName).then(cache => cache.addAll(assets)));
 });
 
 self.addEventListener('activate', evt => {
   evt.waitUntil(
-    caches.keys().then(keys => {
-      return Promise.all(keys
-        .filter(key => key !== cacheName)
-        .map(key => caches.delete(key))
-      );
-    })
+    caches.keys().then(keys => Promise.all(keys.filter(k => k !== cacheName).map(k => caches.delete(k))))
   );
 });
 
 self.addEventListener('fetch', evt => {
   evt.respondWith(
-    fetch(evt.request)
-      .then(res => {
-        const resClone = res.clone();
-        caches.open(cacheName).then(cache => {
-          cache.put(evt.request, resClone);
-        });
-        return res;
-      })
-      .catch(() => {
-        return caches.match(evt.request);
-      })
+    fetch(evt.request).then(res => {
+      const clone = res.clone();
+      caches.open(cacheName).then(cache => cache.put(evt.request, clone));
+      return res;
+    }).catch(() => caches.match(evt.request))
   );
 });
