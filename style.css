@@ -15,22 +15,21 @@
     -webkit-tap-highlight-color: transparent; /* Remove flash cinza ao tocar */
     
     /* Bloqueia seleção de texto e imagem */
-    -webkit-touch-callout: none; /* Remove menu de toque longo (iOS) */
-    -webkit-user-select: none;   /* Safari/Chrome Mobile */
-    -khtml-user-select: none;    /* Konqueror HTML */
-    -moz-user-select: none;      /* Firefox */
-    -ms-user-select: none;       /* Internet Explorer/Edge */
-    user-select: none;           /* Padrão moderno */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 /* Exceção: Permitir digitar nos nomes dos times */
 input, textarea {
     -webkit-user-select: text !important;
     user-select: text !important;
-    -webkit-touch-callout: default !important; /* Permite corrigir texto no iOS */
+    -webkit-touch-callout: default !important;
 }
 
-/* --- Restante do CSS continua igual --- */
 body {
     background: linear-gradient(160deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
     color: var(--text-main); 
@@ -39,7 +38,6 @@ body {
     width: 100vw; 
     height: 100dvh; 
     overflow: hidden; 
-    /* user-select já foi definido no * acima */
     display: flex; 
     align-items: center; 
     justify-content: center;
@@ -54,11 +52,11 @@ body {
     background: transparent;
 }
 
-/* Modo Desktop/Tablet: Simula Celular */
+/* Modo Desktop/Tablet */
 @media (min-width: 600px) {
     #app-root {
         width: 100%;
-        max-width: 400px; /* Largura ideal de celular */
+        max-width: 400px;
         height: 90dvh;
         max-height: 850px;
         border-radius: 40px;
@@ -133,15 +131,28 @@ body {
 
 .placar-container {
     flex: 1; display: flex; gap: 15px; width: 100%;
-    /* O segredo da responsividade vertical: */
     min-height: 0; 
 }
 
+/* CARD PRINCIPAL - Agora é clicável */
 .score-card {
     flex: 1; display: flex; flex-direction: column; 
     background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 20px;
     padding: 10px; align-items: center; justify-content: space-between;
-    transition: background 0.3s, border-color 0.3s;
+    transition: all 0.1s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    /* Impede seleção de texto ao clicar freneticamente */
+    user-select: none; 
+    -webkit-user-select: none;
+}
+
+/* Efeito de clique no card */
+.score-card:active {
+    transform: scale(0.98);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 .score-card.winning { border-color: var(--primary-color); background: rgba(194, 164, 112, 0.15); box-shadow: 0 0 30px rgba(194, 164, 112, 0.2) inset; }
@@ -150,26 +161,42 @@ body {
     font-size: clamp(0.9rem, 2vh, 1.2rem); 
     color: var(--text-dim); margin: 10px 0 0 0; text-transform: uppercase; letter-spacing: 2px; text-align: center;
     height: 30px; display: flex; align-items: center;
+    pointer-events: none; /* Clique passa para o card */
 }
 
 /* Fonte Gigante Responsiva */
 .score-number {
     flex: 1; display: flex; align-items: center; justify-content: center;
-    font-size: clamp(4rem, 25vw, 9rem); /* Ajusta baseado na largura da tela */
+    font-size: clamp(4rem, 25vw, 9rem);
     font-weight: 200; line-height: 1;
     font-variant-numeric: tabular-nums;
+    pointer-events: none; /* Clique passa para o card */
 }
 
 .score-controls {
     width: 100%; height: 60px; background: rgba(0,0,0,0.25); 
     border-radius: 14px; display: flex; overflow: hidden; flex-shrink: 0;
+    /* Z-index garante que os botões fiquem sobre a área de clique do card */
+    z-index: 10;
 }
 
-.ctrl-btn { flex: 1; background: transparent; border: none; color: var(--text-main); font-size: 2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; touch-action: manipulation; }
-.ctrl-btn:active { background: rgba(255,255,255,0.1); }
+.ctrl-btn { 
+    flex: 1; background: transparent; border: none; color: var(--text-main); 
+    font-size: 2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; 
+    touch-action: manipulation; 
+    transition: background 0.2s;
+}
+.ctrl-btn:active { background: rgba(255,255,255,0.15); }
+
+/* Botão de Flor */
+.flor-btn {
+    font-size: 1.6rem;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
 .vert-sep { width: 1px; background: rgba(255,255,255,0.1); margin: 10px 0; }
 
-/* --- Modais --- */
+/* --- Modais e Outros --- */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 2000; display: flex; justify-content: center; align-items: center; transition: opacity 0.3s; }
 .modal-overlay.hidden { opacity: 0; pointer-events: none; }
 .modal-box { max-width: 85%; width: 320px; padding: 30px; text-align: center; transform: scale(1); transition: transform 0.3s; }
@@ -180,10 +207,8 @@ body {
 .modal-btn.primary { background: var(--primary-color); color: #2d1b0c; }
 .modal-btn.secondary { background: rgba(255,255,255,0.1); color: var(--text-main); }
 
-/* Confetes Canvas */
 #confetti-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1500; }
 
-/* Ajuste para telas MUITO pequenas (ex: iPhone 5/SE antigo) */
 @media (max-height: 600px) {
     .content-wrapper { padding: 15px; }
     .header-logo h1 { font-size: 1.5rem; }
@@ -192,104 +217,38 @@ body {
     .score-number { font-size: clamp(3rem, 20vw, 5rem); }
 }
 
-/* --- ESTILOS DA PÁGINA DE REGRAS (iOS Design) --- */
-
-.rules-screen {
-    background: linear-gradient(160deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
-    display: flex; flex-direction: column; overflow: hidden;
-}
-
-/* Navbar estilo iOS com Blur */
-.ios-navbar {
-    height: 50px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 15px;
-    background: rgba(45, 58, 40, 0.7);
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    position: sticky; top: 0; z-index: 100;
-}
-
-.nav-btn {
-    background: none; border: none; color: var(--primary-color);
-    font-size: 1rem; font-weight: 500; cursor: pointer;
-    display: flex; align-items: center; padding: 10px 0; width: 80px;
-}
+/* CSS DA PÁGINA DE REGRAS (Mantido igual) */
+.rules-screen { background: linear-gradient(160deg, var(--bg-top) 0%, var(--bg-bottom) 100%); display: flex; flex-direction: column; overflow: hidden; }
+.ios-navbar { height: 50px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; background: rgba(45, 58, 40, 0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0; z-index: 100; }
+.nav-btn { background: none; border: none; color: var(--primary-color); font-size: 1rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; padding: 10px 0; width: 80px; }
 .chevron-left { font-size: 1.5rem; margin-right: 2px; margin-bottom: 2px; }
 .nav-title { font-weight: 700; font-size: 1.1rem; color: var(--text-main); }
 .nav-placeholder { width: 80px; }
-
-/* Conteúdo com Scroll */
-.scroll-content {
-    flex: 1; overflow-y: auto; padding: 20px;
-    -webkit-overflow-scrolling: touch;
-}
-
+.scroll-content { flex: 1; overflow-y: auto; padding: 20px; -webkit-overflow-scrolling: touch; }
 .page-title { margin: 10px 0 5px 0; font-size: 2rem; font-weight: 800; color: var(--text-main); }
 .page-subtitle { margin: 0 0 25px 0; font-size: 1rem; color: var(--text-dim); }
-
-.group-label {
-    display: block; margin: 20px 0 8px 15px;
-    font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px;
-}
-
-/* Lista Agrupada (iOS List) */
-.ios-list-group {
-    background: var(--glass-bg); 
-    border-radius: 14px; overflow: hidden;
-    padding: 0; /* Remove padding do card padrão */
-}
-
-.ios-list-item summary {
-    padding: 15px; cursor: pointer; user-select: none;
-    display: flex; align-items: center; justify-content: space-between;
-    list-style: none; transition: background 0.2s;
-}
+.group-label { display: block; margin: 20px 0 8px 15px; font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+.ios-list-group { background: var(--glass-bg); border-radius: 14px; overflow: hidden; padding: 0; }
+.ios-list-item summary { padding: 15px; cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: space-between; list-style: none; transition: background 0.2s; }
 .ios-list-item summary:active { background: rgba(255,255,255,0.05); }
 .ios-list-item summary::-webkit-details-marker { display: none; }
-
 .icon-box { width: 25px; text-align: center; margin-right: 12px; font-size: 1.2rem; }
 .item-title { flex: 1; font-size: 1rem; font-weight: 500; }
 .chevron-right { color: var(--text-dim); font-size: 1.2rem; font-weight: 300; transform: rotate(0deg); transition: transform 0.2s; }
 .ios-list-item[open] .chevron-right { transform: rotate(90deg); }
-
 .list-separator { height: 1px; background: rgba(255,255,255,0.1); margin-left: 52px; }
-
-/* Conteúdo Interno do Details */
-.details-body {
-    padding: 0 15px 15px 52px;
-    font-size: 0.95rem; line-height: 1.5; color: rgba(255,255,255,0.85);
-    animation: slideDown 0.3s ease;
-}
-
+.details-body { padding: 0 15px 15px 52px; font-size: 0.95rem; line-height: 1.5; color: rgba(255,255,255,0.85); animation: slideDown 0.3s ease; }
 @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
-
 .desc { margin: 0 0 10px 0; font-size: 0.9rem; color: var(--text-dim); }
-
-/* Tabelas e Linhas de Valor */
-.key-value-row {
-    display: flex; justify-content: space-between;
-    padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
-}
+.key-value-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
 .key-value-row:last-child { border-bottom: none; }
 .key-value-row strong { color: var(--primary-color); }
-
-/* Grid de Hierarquia de Cartas */
 .card-rank-grid { display: flex; flex-direction: column; gap: 4px; }
 .rank-row { display: flex; align-items: center; padding: 4px 0; }
-.card-face { 
-    font-weight: 800; width: 45px; text-align: right; margin-right: 15px; 
-    font-variant-numeric: tabular-nums; 
-}
+.card-face { font-weight: 800; width: 45px; text-align: right; margin-right: 15px; font-variant-numeric: tabular-nums; }
 .high .card-face { color: var(--primary-color); font-size: 1.1rem; }
 .high .card-name { font-weight: 700; color: #fff; }
 .low { opacity: 0.6; }
 .divider { height: 1px; background: rgba(255,255,255,0.1); margin: 8px 0; }
-
 .clean-list { padding-left: 15px; margin: 0; }
 .clean-list li { margin-bottom: 5px; }
-
-/* Ajuste Mobile */
-@media (max-height: 600px) {
-    .page-title { font-size: 1.6rem; }
-}
