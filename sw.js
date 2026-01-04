@@ -1,4 +1,4 @@
-const cacheName = 'truco-v19'; // Versão final correção layout
+const cacheName = 'truco-v20'; // Versão final correção layout
 const assets = [
   './',
   './index.html',
