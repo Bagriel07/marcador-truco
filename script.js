@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'truco_v7_fix'; 
+const STORAGE_KEY = 'truco_v8_down'; 
 
 let jogoAtivo = false;
 let nome1 = "Nós", nome2 = "Eles";
@@ -23,7 +23,7 @@ window.onload = function() {
     }
 };
 
-// --- Gerenciamento Inteligente de Toque vs Clique ---
+// --- Gerenciamento de Toque (Swipe Down) ---
 function setupTouchHandlers() {
     setupCardTouch('card-time1', 1);
     setupCardTouch('card-time2', 2);
@@ -38,7 +38,7 @@ function setupCardTouch(cardId, timeIndex) {
         if (!jogoAtivo || e.target.closest('.ctrl-btn-v')) return;
         startX = e.touches[0].clientX;
         startY = e.touches[0].clientY;
-        blockClick = false; // Reseta bloqueio no início do toque
+        blockClick = false; 
         card.classList.add('touched');
     }, { passive: true });
 
@@ -50,25 +50,27 @@ function setupCardTouch(cardId, timeIndex) {
         const endY = e.changedTouches[0].clientY;
         
         const diffX = endX - startX;
-        const diffY = endY - startY;
+        const diffY = endY - startY; // Positivo = Baixo, Negativo = Cima
 
-        // Se arrastou mais de 50px horizontalmente...
-        if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
-            // É um SWIPE!
-            blockClick = true; // IMPEDE que o 'onclick' aconteça depois
+        // LÓGICA DE SWIPE PARA BAIXO (Diminuir Ponto)
+        // 1. diffY > 50: Garante que arrastou para baixo pelo menos 50px
+        // 2. abs(diffY) > abs(diffX): Garante que o movimento foi mais vertical que horizontal
+        if (diffY > 50 && Math.abs(diffY) > Math.abs(diffX)) {
             
-            // Vibração dupla para indicar subtração
+            blockClick = true; // Bloqueia o click subsequente
+            
+            // Vibração dupla característica de "apagar/diminuir"
             try { if (navigator.vibrate) navigator.vibrate([30, 50, 30]); } catch(e){}
             mudarPontos(timeIndex, -1);
         }
     });
 }
 
-// Chamado pelo onclick do HTML (Funciona em Mouse e Touch)
+// Chamado pelo onclick do HTML
 function pontuarTap(time) {
     if (!jogoAtivo) return;
     
-    // Se houve um swipe milissegundos antes, ignoramos este clique
+    // Se o Swipe ativou o bloqueio, não pontua
     if (blockClick) {
         blockClick = false;
         return;
@@ -78,7 +80,7 @@ function pontuarTap(time) {
     mudarPontos(time, 1);
 }
 
-// --- Interface e Lógica do Jogo ---
+// --- Lógica do Jogo ---
 function selPonto(valor, btn) {
     document.getElementById('input-max').value = valor;
     maxPontos = valor; 
@@ -115,8 +117,8 @@ function iniciarJogo() {
 function mudarPontos(time, qtd) {
     if (!jogoAtivo) return;
 
-    // Vibração botões
-    if (Math.abs(qtd) > 1 || (qtd < 0 && !blockClick)) {
+    // Vibrações extras apenas para botões (o swipe tem vibração própria)
+    if ((Math.abs(qtd) > 1 || qtd < 0) && !blockClick) {
         try { if (navigator.vibrate) navigator.vibrate(40); } catch(e){}
     }
 
@@ -212,7 +214,7 @@ function abrirModal(titulo, mensagem, textoConfirmar, acaoConfirmar) {
     modal.classList.remove('hidden');
 }
 
-// --- Persistência e Confetes (Padrão) ---
+// --- Persistência e Confetes ---
 function salvarTudo() {
     if(!jogoAtivo && (score1 === maxPontos || score2 === maxPontos)) return;
     const estado = { ativo: jogoAtivo, n1: nome1, n2: nome2, max: maxPontos, s1: score1, s2: score2 };
