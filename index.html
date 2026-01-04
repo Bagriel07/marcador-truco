@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco Gaudério</title>
+    <title>Truco Placar</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#2d3a28">
-    <link rel="apple-touch-icon" href="icon.png">
+    <meta name="theme-color" content="#000000"> <link rel="apple-touch-icon" href="icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
@@ -25,11 +24,11 @@
                 
                 <div class="glass-card">
                     <div class="input-group">
-                        <input type="text" id="input-time1" placeholder="Nós (Time da Casa)" autocomplete="off">
+                        <input type="text" id="input-time1" placeholder="Nós" autocomplete="off">
                     </div>
                     <div class="separator"></div>
                     <div class="input-group">
-                        <input type="text" id="input-time2" placeholder="Eles (Visitantes)" autocomplete="off">
+                        <input type="text" id="input-time2" placeholder="Eles" autocomplete="off">
                     </div>
                 </div>
 
@@ -44,16 +43,23 @@
                     <input type="hidden" id="input-max" value="12">
                 </div>
 
-                <button id="btn-start" class="btn-primary" onclick="iniciarJogo()">Iniciar Partida</button>
-                <a href="regras.html" class="link-secondary">Ver Regras Oficiais</a>
+                <button id="btn-start" class="btn-primary" onclick="iniciarJogo()">Iniciar</button>
+                <a href="regras.html" class="link-secondary">Regras e Hierarquia</a>
             </div>
         </div>
 
         <div id="game-screen" class="screen hidden game-layout">
             <div class="top-bar">
                 <button class="icon-btn" onclick="confirmarSaida()">✕</button>
-                <span id="display-meta" class="badge">Meta: 12</span>
-                <button class="icon-btn" onclick="confirmarZerar()" id="btn-reset">↺</button>
+                
+                <span id="display-meta" class="badge">12</span>
+                
+                <div style="display: flex; gap: 8px;">
+                    <button class="icon-btn" onclick="window.location.href='regras.html'" aria-label="Ver Regras">
+                        ?
+                    </button>
+                    <button class="icon-btn" onclick="confirmarZerar()" id="btn-reset">↺</button>
+                </div>
             </div>
             
             <div class="placar-container">
@@ -87,7 +93,7 @@
             <p id="modal-msg">Mensagem</p>
             <div class="modal-actions">
                 <button id="modal-btn-cancel" class="modal-btn secondary">Cancelar</button>
-                <button id="modal-btn-confirm" class="modal-btn primary">Confirmar</button>
+                <button id="modal-btn-confirm" class="modal-btn primary">OK</button>
             </div>
         </div>
     </div>
@@ -95,7 +101,7 @@
     <script src="script.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
-            //navigator.serviceWorker.register('./sw.js');
+             // navigator.serviceWorker.register('./sw.js');
         }
     </script>
 </body>
