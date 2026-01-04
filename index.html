@@ -50,7 +50,7 @@
             </div>
         </div>
 
-                <div id="game-screen" class="screen hidden game-layout">
+        <div id="game-screen" class="screen hidden game-layout">
             <div class="top-bar">
                 <button class="icon-btn" onclick="confirmarSaida()">✕</button>
                 <span id="display-meta" class="badge">Meta: 12</span>
@@ -60,9 +60,7 @@
             <div class="placar-container">
                 <div class="score-card" id="card-time1" onclick="pontuarTap(1)">
                     <h2 id="nome-time1" class="team-name">NÓS</h2>
-                    
                     <div class="score-number" id="score-time1">0</div>
-                    
                     <div class="score-controls">
                         <button class="ctrl-btn" onclick="event.stopPropagation(); mudarPontos(1, -1)">−</button>
                         <div class="vert-sep"></div>
@@ -72,9 +70,7 @@
                 
                 <div class="score-card" id="card-time2" onclick="pontuarTap(2)">
                     <h2 id="nome-time2" class="team-name">ELES</h2>
-                    
                     <div class="score-number" id="score-time2">0</div>
-                    
                     <div class="score-controls">
                         <button class="ctrl-btn" onclick="event.stopPropagation(); mudarPontos(2, -1)">−</button>
                         <div class="vert-sep"></div>
@@ -83,7 +79,8 @@
                 </div>
             </div>
         </div>
- 
+
+    </div> 
 
     <div id="custom-modal" class="modal-overlay hidden">
         <div class="modal-box glass-card">
