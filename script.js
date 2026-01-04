@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'truco_v4_reset'; // Atualizei a chave para garantir funcionamento novo
+const STORAGE_KEY = 'truco_v5_tap'; // Nova chave para evitar conflito com versão anterior
 
 let jogoAtivo = false;
 let nome1 = "Nós", nome2 = "Eles";
@@ -9,12 +9,10 @@ let historico = [];
 window.onload = function() {
     try {
         carregarEstado();
-        // Restaura o botão de pontos ativo visualmente
         const defaultBtn = document.querySelector(`.segment-opt[onclick*="${maxPontos}"]`) || document.querySelector('.segment-opt');
         if(defaultBtn) {
             document.querySelectorAll('.segment-opt').forEach(b => b.classList.remove('active'));
             defaultBtn.classList.add('active');
-            // Pequeno delay para o layout carregar antes de mover o glider
             setTimeout(() => moveGlider(defaultBtn), 100);
         }
         window.confetti = { start: startConfetti, stop: stopConfetti };
@@ -49,7 +47,6 @@ function iniciarJogo() {
     nome1 = n1 || "Nós";
     nome2 = n2 || "Eles";
     
-    // Garante que começa zerado
     score1 = 0; 
     score2 = 0; 
     historico = [];
@@ -62,12 +59,22 @@ function iniciarJogo() {
     document.getElementById('game-screen').classList.remove('hidden');
 }
 
+// --- Nova Função: Tocar na tela para somar 1 ---
+function pontuarTap(time) {
+    // Vibração curtinha e rápida para feedback tátil
+    try { if (navigator.vibrate) navigator.vibrate(15); } catch(e){}
+    mudarPontos(time, 1);
+}
+
 function mudarPontos(time, qtd) {
     historico.push({ s1: score1, s2: score2 });
     if (historico.length > 10) historico.shift(); 
     document.getElementById('btn-undo').disabled = false;
 
-    try { if (navigator.vibrate) navigator.vibrate(40); } catch(e){}
+    // Vibração maior se for botão (flor ou menos)
+    if (Math.abs(qtd) > 1 || qtd < 0) {
+        try { if (navigator.vibrate) navigator.vibrate(40); } catch(e){}
+    }
 
     if (time === 1) score1 += qtd;
     else score2 += qtd;
@@ -91,22 +98,18 @@ function desfazer() {
     
     if (historico.length === 0) document.getElementById('btn-undo').disabled = true;
     
-    stopConfetti(); // Para confetes se desfazer a vitória
+    stopConfetti(); 
     salvarTudo();
     atualizarTela();
 }
 
 function atualizarTela() {
-    // Atualiza números
     document.getElementById('score-time1').innerText = score1;
     document.getElementById('score-time2').innerText = score2;
-    
-    // Atualiza nomes e meta
     document.getElementById('nome-time1').innerText = nome1;
     document.getElementById('nome-time2').innerText = nome2;
     document.getElementById('display-meta').innerText = "Meta: " + maxPontos;
 
-    // Cores de vitória
     const card1 = document.getElementById('card-time1');
     const card2 = document.getElementById('card-time2');
     
@@ -118,25 +121,18 @@ function atualizarTela() {
 }
 
 // --- Lógica de Reset e Saída ---
-
-// Função dedicada para ZERAR TUDO e voltar ao início
 function resetarPartida() {
     jogoAtivo = false;
     score1 = 0;
     score2 = 0;
     historico = [];
     localStorage.removeItem(STORAGE_KEY);
-    
-    // Atualiza a tela para mostrar "0" antes mesmo de trocar de tela
     atualizarTela();
-    
-    // Troca as telas
     document.getElementById('game-screen').classList.add('hidden');
     document.getElementById('setup-screen').classList.remove('hidden');
 }
 
 function confirmarSaida() {
-    // Aqui ainda pergunta, pois o usuário clicou no "X" durante o jogo
     abrirModal("Sair do Jogo?", "O placar atual será apagado.", "Sair", () => {
         resetarPartida();
     });
@@ -147,7 +143,6 @@ function mostrarVitoria(vencedor) {
     try { if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 500]); } catch(e){}
     
     setTimeout(() => {
-        // Ao clicar em "Novo Jogo" aqui, NÃO PERGUNTA NADA, apenas reseta.
         abrirModal("Fim de Jogo!", vencedor.toUpperCase() + " VENCERAM!", "Novo Jogo", () => {
             stopConfetti();
             resetarPartida(); 
@@ -200,10 +195,8 @@ function carregarEstado() {
         
         document.getElementById('btn-undo').disabled = (historico.length === 0);
         jogoAtivo = true;
-        
         document.getElementById('setup-screen').classList.add('hidden');
         document.getElementById('game-screen').classList.remove('hidden');
-        
         atualizarTela();
     }
 }
