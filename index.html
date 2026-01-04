@@ -57,9 +57,8 @@
             </div>
             
             <div class="placar-container">
-                <div class="score-card" id="card-time1">
+                <div class="score-card" id="card-time1" onclick="pontuarTap(1)">
                     <h2 id="nome-time1" class="team-name">NÓS</h2>
-                    
                     <div class="score-number" id="score-time1">0</div>
                     
                     <div class="score-controls-vertical">
@@ -68,9 +67,8 @@
                     </div>
                 </div>
                 
-                <div class="score-card" id="card-time2">
+                <div class="score-card" id="card-time2" onclick="pontuarTap(2)">
                     <h2 id="nome-time2" class="team-name">ELES</h2>
-                    
                     <div class="score-number" id="score-time2">0</div>
                     
                     <div class="score-controls-vertical">
@@ -96,9 +94,8 @@
 
     <script src="script.js"></script>
     <script>
-        // O registro do SW deve ficar aqui ou em um arquivo separado, não no script principal do jogo
         if ('serviceWorker' in navigator) {
-            //navigator.serviceWorker.register('./sw.js'); // Comentado para desenvolvimento local evitar cache agressivo
+            // navigator.serviceWorker.register('./sw.js');
         }
     </script>
 </body>
