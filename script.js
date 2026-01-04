@@ -1,15 +1,15 @@
-const STORAGE_KEY = 'truco_v6_swipe'; // Chave atualizada
+const STORAGE_KEY = 'truco_v7_fix'; 
 
 let jogoAtivo = false;
 let nome1 = "Nós", nome2 = "Eles";
 let maxPontos = 12;
 let score1 = 0, score2 = 0;
-// Histórico removido
+let blockClick = false; // Flag para impedir conflito entre Swipe e Click
 
 window.onload = function() {
     try {
         carregarEstado();
-        setupTouchHandlers(); // Configura os gestos
+        setupTouchHandlers(); 
         const defaultBtn = document.querySelector(`.segment-opt[onclick*="${maxPontos}"]`) || document.querySelector('.segment-opt');
         if(defaultBtn) {
             document.querySelectorAll('.segment-opt').forEach(b => b.classList.remove('active'));
@@ -23,7 +23,7 @@ window.onload = function() {
     }
 };
 
-// --- Gerenciamento de Gestos (Tap vs Swipe) ---
+// --- Gerenciamento Inteligente de Toque vs Clique ---
 function setupTouchHandlers() {
     setupCardTouch('card-time1', 1);
     setupCardTouch('card-time2', 2);
@@ -31,60 +31,52 @@ function setupTouchHandlers() {
 
 function setupCardTouch(cardId, timeIndex) {
     const card = document.getElementById(cardId);
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let touchStartTime = 0;
-    const swipeThreshold = 50; // Pixels mínimos para considerar um swipe horizontal
-    const tapTimeThreshold = 250; // Milissegundos máximos para considerar um tap rápido
+    let startX = 0;
+    let startY = 0;
 
     card.addEventListener('touchstart', (e) => {
-        if (!jogoAtivo) return;
-        // Se tocar nos botões internos, ignora o gesto do card
-        if (e.target.closest('.ctrl-btn-v')) return;
-
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
-        touchStartTime = new Date().getTime();
-        card.classList.add('touched'); // Feedback visual
+        if (!jogoAtivo || e.target.closest('.ctrl-btn-v')) return;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        blockClick = false; // Reseta bloqueio no início do toque
+        card.classList.add('touched');
     }, { passive: true });
 
     card.addEventListener('touchend', (e) => {
-        if (!jogoAtivo) return;
-        if (e.target.closest('.ctrl-btn-v')) {
-             card.classList.remove('touched');
-             return;
-        }
-
-        const touchEndX = e.changedTouches[0].clientX;
-        const touchEndY = e.changedTouches[0].clientY;
-        const touchEndTime = new Date().getTime();
-
-        const diffX = touchEndX - touchStartX;
-        const diffY = touchEndY - touchStartY;
-        const duration = touchEndTime - touchStartTime;
-
-        // Lógica:
-        // 1. Se o movimento horizontal for grande E maior que o vertical -> SWIPE (-1)
-        // 2. Se foi um toque rápido sem muito movimento -> TAP (+1)
-
-        if (Math.abs(diffX) > swipeThreshold && Math.abs(diffX) > Math.abs(diffY)) {
-            // SWIPE HORIZONTAL DETECTADO -> Diminuir ponto
-             // Vibração diferente para swipe (dois toques rápidos)
-             try { if (navigator.vibrate) navigator.vibrate([30, 50, 30]); } catch(e){}
-            mudarPontos(timeIndex, -1);
-        } else if (duration < tapTimeThreshold && Math.abs(diffX) < 10 && Math.abs(diffY) < 10) {
-            // TAP RÁPIDO DETECTADO -> Aumentar ponto
-            try { if (navigator.vibrate) navigator.vibrate(15); } catch(e){}
-            mudarPontos(timeIndex, 1);
-        }
-
         card.classList.remove('touched');
+        if (!jogoAtivo || e.target.closest('.ctrl-btn-v')) return;
+
+        const endX = e.changedTouches[0].clientX;
+        const endY = e.changedTouches[0].clientY;
+        
+        const diffX = endX - startX;
+        const diffY = endY - startY;
+
+        // Se arrastou mais de 50px horizontalmente...
+        if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
+            // É um SWIPE!
+            blockClick = true; // IMPEDE que o 'onclick' aconteça depois
+            
+            // Vibração dupla para indicar subtração
+            try { if (navigator.vibrate) navigator.vibrate([30, 50, 30]); } catch(e){}
+            mudarPontos(timeIndex, -1);
+        }
     });
-     
-    // Remove o feedback visual se o toque for cancelado (ex: sair da tela)
-    card.addEventListener('touchcancel', () => card.classList.remove('touched'));
 }
 
+// Chamado pelo onclick do HTML (Funciona em Mouse e Touch)
+function pontuarTap(time) {
+    if (!jogoAtivo) return;
+    
+    // Se houve um swipe milissegundos antes, ignoramos este clique
+    if (blockClick) {
+        blockClick = false;
+        return;
+    }
+
+    try { if (navigator.vibrate) navigator.vibrate(15); } catch(e){}
+    mudarPontos(time, 1);
+}
 
 // --- Interface e Lógica do Jogo ---
 function selPonto(valor, btn) {
@@ -110,7 +102,7 @@ function iniciarJogo() {
     nome1 = n1 || "Nós";
     nome2 = n2 || "Eles";
     
-    zerarPlacarAtual(); // Reseta escores
+    zerarPlacarAtual();
     jogoAtivo = true;
     
     salvarTudo();
@@ -120,26 +112,22 @@ function iniciarJogo() {
     document.getElementById('game-screen').classList.remove('hidden');
 }
 
-
 function mudarPontos(time, qtd) {
     if (!jogoAtivo) return;
 
-    // Vibração mais forte para botões ou swipe negativo
-    if (Math.abs(qtd) > 1 || qtd < 0) {
-        // A vibração do swipe já é tratada no event listener, aqui é para os botões
-        if(qtd > 0) try { if (navigator.vibrate) navigator.vibrate(40); } catch(e){}
+    // Vibração botões
+    if (Math.abs(qtd) > 1 || (qtd < 0 && !blockClick)) {
+        try { if (navigator.vibrate) navigator.vibrate(40); } catch(e){}
     }
 
     if (time === 1) score1 += qtd;
     else score2 += qtd;
 
-    // Limites
     if (score1 < 0) score1 = 0;
     if (score2 < 0) score2 = 0;
     if (score1 > maxPontos) score1 = maxPontos;
     if (score2 > maxPontos) score2 = maxPontos;
 
-    // Verifica Vitória
     if (score1 === maxPontos || score2 === maxPontos) {
         mostrarVitoria();
     }
@@ -147,7 +135,6 @@ function mudarPontos(time, qtd) {
     salvarTudo();
     atualizarTela();
 }
-
 
 function atualizarTela() {
     document.getElementById('score-time1').innerText = score1;
@@ -166,9 +153,7 @@ function atualizarTela() {
     if (score2 === maxPontos && score2 > 0) card2.classList.add('winning');
 }
 
-// --- Lógica de Reset e Saída ---
-
-// Botão X: Volta para o menu inicial
+// --- Reset e Saída ---
 function confirmarSaida() {
     abrirModal("Sair para o Menu?", "O jogo atual será perdido.", "Sair", () => {
         resetarParaMenu();
@@ -183,7 +168,6 @@ function resetarParaMenu() {
     document.getElementById('setup-screen').classList.remove('hidden');
 }
 
-// Botão ↺: Zera o placar na mesma tela
 function confirmarZerar() {
      abrirModal("Reiniciar a Mão?", "O placar voltará a 0x0.", "Sim, Zerar", () => {
         zerarPlacarAtual();
@@ -199,12 +183,10 @@ function zerarPlacarAtual() {
     jogoAtivo = true;
 }
 
-
 function mostrarVitoria() {
-    jogoAtivo = false; // Trava pontuação extra
+    jogoAtivo = false; 
     startConfetti();
     try { if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 500]); } catch(e){}
-    // Não abre mais modal automático. O usuário clica em Zerar quando quiser.
 }
 
 // --- Modais ---
@@ -217,7 +199,6 @@ function abrirModal(titulo, mensagem, textoConfirmar, acaoConfirmar) {
     const btnCancel = document.getElementById('modal-btn-cancel');
     
     btnConfirm.innerText = textoConfirmar || "OK";
-    
     btnCancel.onclick = () => modal.classList.add('hidden');
 
     const novoBtn = btnConfirm.cloneNode(true);
@@ -231,11 +212,9 @@ function abrirModal(titulo, mensagem, textoConfirmar, acaoConfirmar) {
     modal.classList.remove('hidden');
 }
 
-// --- Persistência ---
+// --- Persistência e Confetes (Padrão) ---
 function salvarTudo() {
-    // Não salva se o jogo acabou para não ficar preso na tela de vitória
     if(!jogoAtivo && (score1 === maxPontos || score2 === maxPontos)) return;
-
     const estado = { ativo: jogoAtivo, n1: nome1, n2: nome2, max: maxPontos, s1: score1, s2: score2 };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(estado));
 }
@@ -243,12 +222,10 @@ function salvarTudo() {
 function carregarEstado() {
     const salvoStr = localStorage.getItem(STORAGE_KEY);
     if (!salvoStr) return;
-    
     const salvo = JSON.parse(salvoStr);
     if (salvo && salvo.ativo) {
         nome1 = salvo.n1; nome2 = salvo.n2; maxPontos = salvo.max;
         score1 = salvo.s1; score2 = salvo.s2;
-        
         jogoAtivo = true;
         document.getElementById('setup-screen').classList.add('hidden');
         document.getElementById('game-screen').classList.remove('hidden');
@@ -256,22 +233,19 @@ function carregarEstado() {
     }
 }
 
-// --- Confetes (Mantido igual) ---
 let confettiCtx, confettiActive = false, particles = [], animationId;
 function startConfetti() {
     const canvas = document.getElementById('confetti-canvas');
-    if(!canvas || confettiActive) return; // Evita múltiplos starts
+    if(!canvas || confettiActive) return; 
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
     confettiCtx = canvas.getContext('2d');
     particles = []; confettiActive = true;
-    const colors = ['#f00', '#0f0', '#00f', '#ff0', '#0ff', '#f0f', '#fff', varCss('--primary-color')];
+    const colors = ['#f00', '#0f0', '#00f', '#ff0', '#0ff', '#f0f', '#fff', '#c2a470'];
     for(let i=0; i<150; i++) { 
         particles.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height - canvas.height, color: colors[Math.floor(Math.random() * colors.length)], size: Math.random() * 8 + 4, speed: Math.random() * 6 + 3, wobble: Math.random() * 10 }); 
     }
     animateConfetti();
 }
-// Helper para pegar cor do CSS
-function varCss(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
 
 function animateConfetti() {
     if(!confettiActive) return;
