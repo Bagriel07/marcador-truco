@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'marcador_truco_fodinha_final_v5'; 
+const STORAGE_KEY = 'marcador_truco_fodinha_final_v6'; 
 
 let gameState = {
     mode: 'truco',
@@ -199,13 +199,24 @@ function setupCardTouch(cardId, timeIndex) {
         startX = e.touches[0].clientX; startY = e.touches[0].clientY;
         blockClick = false; card.classList.add('touched');
     }, { passive: true });
+    
     card.addEventListener('touchend', (e) => {
         card.classList.remove('touched');
         if (!gameState.ativo || e.target.closest('.ctrl-btn-v')) return;
         const diffY = e.changedTouches[0].clientY - startY;
         const diffX = e.changedTouches[0].clientX - startX;
+        
+        // SWIPE DOWN (Remover Ponto)
         if (diffY > 50 && Math.abs(diffY) > Math.abs(diffX)) {
-            blockClick = true; vibrar([30, 50]); mudarPontos(timeIndex, -1);
+            blockClick = true; 
+            vibrar([30, 50]); 
+            mudarPontos(timeIndex, -1);
+        }
+        // SWIPE UP (Adicionar Ponto) - NOVA FUNCIONALIDADE
+        else if (diffY < -50 && Math.abs(diffY) > Math.abs(diffX)) {
+            blockClick = true;
+            vibrar(15);
+            mudarPontos(timeIndex, 1);
         }
     });
 }
