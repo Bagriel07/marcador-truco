@@ -318,8 +318,10 @@ function startConfetti() {
     const canvas = document.getElementById('confetti-canvas');
     if (!canvas || confettiActive) return;
 
-    canvas.width = innerWidth;
-    canvas.height = innerHeight;
+    canvas.style.display = 'block'; // 👈 GARANTE VISIBILIDADE
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
     confettiCtx = canvas.getContext('2d');
     confettiActive = true;
     particles = [];
@@ -351,6 +353,16 @@ function animateConfetti() {
 }
 
 function stopConfetti() {
+    const canvas = document.getElementById('confetti-canvas');
     confettiActive = false;
-    cancelAnimationFrame(anim);
+
+    if (anim) cancelAnimationFrame(anim);
+
+    if (confettiCtx) {
+        confettiCtx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    if (canvas) {
+        canvas.style.display = 'none'; // 👈 ESCONDE DE VEZ
+    }
 }
