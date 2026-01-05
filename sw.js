@@ -1,5 +1,6 @@
-const cacheName = 'truco-v23'; // Versão final correção layout
-const assets = [
+const CACHE = 'truco-v24';
+
+const ASSETS = [
   './',
   './index.html',
   './regras.html',
@@ -9,24 +10,23 @@ const assets = [
   './icon.png'
 ];
 
-self.addEventListener('install', evt => {
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll(ASSETS))
+  );
   self.skipWaiting();
-  evt.waitUntil(caches.open(cacheName).then(cache => cache.addAll(assets)));
 });
 
-self.addEventListener('activate', evt => {
-  evt.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(k => k !== cacheName).map(k => caches.delete(k))))
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    )
   );
 });
 
-self.addEventListener('fetch', evt => {
-  evt.respondWith(
-    fetch(evt.request).then(res => {
-      const clone = res.clone();
-      caches.open(cacheName).then(cache => cache.put(evt.request, clone));
-      return res;
-    }).catch(() => caches.match(evt.request))
+self.addEventListener('fetch', e => {
+  e.respondWith(
+    caches.match(e.request).then(res => res || fetch(e.request))
   );
-
 });
