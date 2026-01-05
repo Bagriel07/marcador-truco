@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco Placar</title>
+    <title>Marcador Gaudério</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#000000"> <link rel="apple-touch-icon" href="icon.png">
+    <meta name="theme-color" content="#121212"> 
+    <link rel="apple-touch-icon" href="icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
@@ -16,48 +17,88 @@
 
     <div id="app-root">
         
-        <div id="setup-screen" class="screen flex-center">
+        <div id="setup-screen" class="screen">
             <div class="content-wrapper">
-                <div class="header-logo">
-                    <h1>Novo Jogo</h1>
-                </div>
                 
-                <div class="glass-card">
-                    <div class="input-group">
-                        <input type="text" id="input-time1" placeholder="Nós" autocomplete="off">
-                    </div>
-                    <div class="separator"></div>
-                    <div class="input-group">
-                        <input type="text" id="input-time2" placeholder="Eles" autocomplete="off">
+                <div class="top-section">
+                    <div class="glass-card">
+                        <div class="segmented-control mode-selector">
+                            <div class="segment-glider" id="mode-glider"></div>
+                            <button class="segment-opt active" onclick="mudarModo('truco', this)">Truco</button>
+                            <button class="segment-opt" onclick="mudarModo('fodinha', this)">Fodinha</button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="glass-card mt-3">
-                    <label class="section-label">Pontuação Alvo</label>
-                    <div class="segmented-control">
-                        <div class="segment-glider"></div>
-                        <button class="segment-opt active" onclick="selPonto(12, this)">12</button>
-                        <button class="segment-opt" onclick="selPonto(24, this)">24</button>
-                        <button class="segment-opt" onclick="selPonto(30, this)">30</button>
+                <div class="setup-body">
+                    
+                    <div id="setup-truco" class="game-setup-container">
+                        <div class="game-title">
+                            <h1>Truco</h1>
+                        </div>
+                        
+                        <div class="center-content">
+                            <div class="glass-card">
+                                <div class="input-group">
+                                    <input type="text" id="input-time1" placeholder="Nós" autocomplete="off">
+                                </div>
+                                <div class="separator"></div>
+                                <div class="input-group">
+                                    <input type="text" id="input-time2" placeholder="Eles" autocomplete="off">
+                                </div>
+                            </div>
+
+                            <div class="glass-card mt-3">
+                                <label class="section-label">Pontos da Partida</label>
+                                <div class="segmented-control">
+                                    <div class="segment-glider"></div>
+                                    <button class="segment-opt active" onclick="selPonto(12, this)">12</button>
+                                    <button class="segment-opt" onclick="selPonto(24, this)">24</button>
+                                    <button class="segment-opt" onclick="selPonto(30, this)">30</button>
+                                </div>
+                                <input type="hidden" id="input-max" value="12">
+                            </div>
+                        </div>
                     </div>
-                    <input type="hidden" id="input-max" value="12">
+
+                    <div id="setup-fodinha" class="game-setup-container hidden">
+                        <div class="game-title">
+                            <h1>Fodinha</h1>
+                        </div>
+
+                        <div class="fodinha-layout">
+                            <div class="life-limit-pill mb-3 shrink-0">
+                                <span class="pill-label">Limite de Vidas:</span>
+                                <input type="number" id="input-vidas-max" class="pill-input" value="5" pattern="\d*" inputmode="numeric">
+                            </div>
+
+                            <div class="dark-scroll-container">
+                                <div class="players-setup-list" id="players-container">
+                                    </div>
+                            </div>
+
+                            <button class="btn-secondary mt-2 shrink-0" onclick="addFodinhaPlayer()">+ Adicionar Jogador</button>
+                        </div>
+                    </div>
+
                 </div>
 
-                <button id="btn-start" class="btn-primary" onclick="iniciarJogo()">Iniciar</button>
-                <a href="regras.html" class="link-secondary">Regras e Hierarquia</a>
+                <div class="footer-action">
+                    <button id="btn-start" class="btn-primary" onclick="iniciarJogo()">Iniciar Jogo</button>
+                    <div style="text-align: center;">
+                        <span class="link-secondary" onclick="window.location.href='regras.html'">Regras e Hierarquia</span>
+                    </div>
+                </div>
+
             </div>
         </div>
 
-        <div id="game-screen" class="screen hidden game-layout">
+        <div id="game-screen-truco" class="screen hidden game-layout">
             <div class="top-bar">
                 <button class="icon-btn" onclick="confirmarSaida()">✕</button>
-                
                 <span id="display-meta" class="badge">12</span>
-                
                 <div style="display: flex; gap: 8px;">
-                    <button class="icon-btn" onclick="window.location.href='regras.html'" aria-label="Ver Regras">
-                        ?
-                    </button>
+                    <button class="icon-btn" onclick="window.location.href='regras.html'">?</button>
                     <button class="icon-btn" onclick="confirmarZerar()" id="btn-reset">↺</button>
                 </div>
             </div>
@@ -66,23 +107,30 @@
                 <div class="score-card" id="card-time1" onclick="pontuarTap(1)">
                     <h2 id="nome-time1" class="team-name">NÓS</h2>
                     <div class="score-number" id="score-time1">0</div>
-                    
                     <div class="score-controls-vertical">
                         <button class="ctrl-btn-v ctrl-minus" onclick="event.stopPropagation(); mudarPontos(1, -1)">−</button>
                         <button class="ctrl-btn-v ctrl-flor" onclick="event.stopPropagation(); mudarPontos(1, 3)">🌸</button>
                     </div>
                 </div>
-                
                 <div class="score-card" id="card-time2" onclick="pontuarTap(2)">
                     <h2 id="nome-time2" class="team-name">ELES</h2>
                     <div class="score-number" id="score-time2">0</div>
-                    
                     <div class="score-controls-vertical">
                         <button class="ctrl-btn-v ctrl-minus" onclick="event.stopPropagation(); mudarPontos(2, -1)">−</button>
                         <button class="ctrl-btn-v ctrl-flor" onclick="event.stopPropagation(); mudarPontos(2, 3)">🌸</button>
                     </div>
                 </div>
             </div>
+        </div>
+
+        <div id="game-screen-fodinha" class="screen hidden game-layout">
+            <div class="top-bar">
+                <button class="icon-btn" onclick="confirmarSaida()">✕</button>
+                <span class="badge">LIMITE: <span id="display-fodinha-max">5</span></span>
+                <button class="icon-btn" onclick="confirmarZerar()">↺</button>
+            </div>
+            
+            <div class="fodinha-grid" id="fodinha-game-grid"></div>
         </div>
 
     </div> 
@@ -99,10 +147,5 @@
     </div>
 
     <script src="script.js"></script>
-    <script>
-        if ('serviceWorker' in navigator) {
-             // navigator.serviceWorker.register('./sw.js');
-        }
-    </script>
 </body>
 </html>
