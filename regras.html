@@ -1,324 +1,231 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Regras Gaudério</title>
-    <link rel="stylesheet" href="style.css">
-    <meta name="theme-color" content="#121212">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Manual Completo - Marcador Gaudério</title>
+<link rel="stylesheet" href="style.css">
+<meta name="theme-color" content="#121212">
 </head>
+
 <body>
+<div id="app-root">
+<div class="screen rules-screen">
 
-    <div id="app-root">
-        <div class="screen rules-screen">
-            
-            <div class="ios-navbar">
-                <button class="nav-btn" onclick="window.location.href='index.html'">
-                    <span class="chevron-left">‹</span> Voltar
-                </button>
-                <span class="nav-title">Manual do Jogo</span>
-                <div class="nav-placeholder"></div>
-            </div>
+<!-- NAVBAR -->
+<div class="ios-navbar">
+<button class="nav-btn" onclick="window.location.href='index.html'">
+<span class="chevron-left">‹</span> Voltar
+</button>
+<span class="nav-title">Manual Completo</span>
+<div class="nav-placeholder"></div>
+</div>
 
-            <div style="padding: 15px 20px 0 20px;">
-                <div class="segmented-control mode-selector">
-                    <div class="segment-glider" id="rules-glider"></div>
-                    <button class="segment-opt active" onclick="mudarAbaRegras('truco', this)">Truco</button>
-                    <button class="segment-opt" onclick="mudarAbaRegras('fodinha', this)">Fodinha</button>
-                </div>
-            </div>
+<!-- SELETOR -->
+<div style="padding: 15px 20px 0 20px;">
+<div class="segmented-control mode-selector">
+<div class="segment-glider" id="rules-glider"></div>
+<button class="segment-opt active" onclick="mudarAba('truco', this)">Truco</button>
+<button class="segment-opt" onclick="mudarAba('fodinha', this)">Fodinha</button>
+</div>
+</div>
 
-            <div class="scroll-content">
-                
-                <div id="regras-truco" class="rules-section">
-                    <h1 class="page-title">Truco Gaudério</h1>
-                    <p class="page-subtitle">Guia completo para iniciantes</p>
+<div class="scroll-content">
 
-                    <span class="group-label">1. O Básico do Jogo</span>
-                    <div class="ios-list-group">
-                        <details class="ios-list-item" open>
-                            <summary>
-                                <div class="icon-box">🎯</div>
-                                <span class="item-title">Objetivo e Estrutura</span>
-                                <span class="chevron-right">›</span>
-                            </summary>
-                            <div class="details-body">
-                                <p class="desc">
-                                    O jogo é disputado em duplas (Nós vs Eles). O objetivo é somar <strong>12 pontos</strong> (ou 24) para vencer a partida.
-                                </p>
-                                <p class="desc" style="margin-top: 10px;">
-                                    O jogo é dividido em pequenas batalhas chamadas "Mãos". Em cada mão, cada jogador recebe 3 cartas.
-                                </p>
-                                <p class="desc" style="margin-top: 10px;">
-                                    Para ganhar os pontos da mão, sua dupla precisa vencer uma <strong>"melhor de três"</strong> rodadas (jogar a carta mais forte na mesa).
-                                </p>
-                            </div>
-                        </details>
-                    </div>
+<!-- ================= TRUCO ================= -->
+<div id="regras-truco">
 
-                    <span class="group-label">2. Força das Cartas (Hierarquia)</span>
-                    <div class="ios-list-group">
-                        <details class="ios-list-item">
-                            <summary>
-                                <div class="icon-box">👑</div>
-                                <span class="item-title">Quais cartas ganham?</span>
-                                <span class="chevron-right">›</span>
-                            </summary>
-                            <div class="details-body">
-                                <p class="desc" style="margin-bottom: 15px;">
-                                    Isso é fixo. Decore as 4 cartas mais poderosas (Manilhas) que ganham de tudo:
-                                </p>
-                                
-                                <div class="card-rank-grid">
-                                    <div class="rank-row high"><span class="card-face">1♠</span> <span class="card-name">1 de Espada (O Macho)</span></div>
-                                    <div class="rank-row high"><span class="card-face">1♣</span> <span class="card-name">1 de Paus (A Fêmea)</span></div>
-                                    <div class="rank-row high"><span class="card-face">7♠</span> <span class="card-name">7 de Espada</span></div>
-                                    <div class="rank-row high"><span class="card-face">7♦</span> <span class="card-name">7 de Ouro</span></div>
-                                    
-                                    <div class="divider"></div>
-                                    <p class="desc" style="margin-bottom: 10px; font-size: 0.8rem;">Abaixo das 4 poderosas, segue a ordem normal:</p>
+<h1 class="page-title">Truco Gaudério</h1>
+<p class="page-subtitle">Manual completo — do zero ao avançado</p>
 
-                                    <div class="rank-row"><span class="card-face">3</span> <span>Todos os Três</span></div>
-                                    <div class="rank-row"><span class="card-face">2</span> <span>Todos os Dois</span></div>
-                                    <div class="rank-row"><span class="card-face">1</span> <span>Ases (Copas ♥ e Ouro ♦)</span></div>
-                                    <div class="rank-row"><span class="card-face">12</span> <span>Reis (K)</span></div>
-                                    <div class="rank-row"><span class="card-face">11</span> <span>Cavalos (Q)</span></div>
-                                    <div class="rank-row"><span class="card-face">10</span> <span>Sotas (J)</span></div>
-                                    <div class="rank-row"><span class="card-face">7</span> <span>Setes (Copas ♥ e Paus ♣)</span></div>
-                                    <div class="rank-row low"><span class="card-face">6</span> <span>Seis</span></div>
-                                    <div class="rank-row low"><span class="card-face">5</span> <span>Cincos</span></div>
-                                    <div class="rank-row low"><span class="card-face">4</span> <span>Quatros (Mais fraca)</span></div>
-                                </div>
-                            </div>
-                        </details>
-                    </div>
+<span class="group-label">1. Visão Geral</span>
+<div class="ios-list-group">
+<div class="details-body">
+<p>O Truco é jogado em <strong>duplas</strong>: <strong>Nós vs Eles</strong>.</p>
+<p>O objetivo é somar <strong>12 pontos</strong> (ou 24 / 30, conforme combinado) antes do adversário.</p>
+<p>A partida é dividida em várias <strong>mãos</strong>, e cada mão vale pontos.</p>
+</div>
+</div>
 
-                    <span class="group-label">3. Fase 1: Pontos de Início (Envido)</span>
-                    <div class="ios-list-group">
-                        <details class="ios-list-item">
-                            <summary>
-                                <div class="icon-box">🧮</div>
-                                <span class="item-title">O que é Envido?</span>
-                                <span class="chevron-right">›</span>
-                            </summary>
-                            <div class="details-body">
-                                <p class="desc">
-                                    Antes de jogar qualquer carta na mesa, os jogadores conferem se têm pontos nas mãos. Isso se chama "Envido".
-                                </p>
-                                <p class="desc" style="margin-top:10px;">
-                                    Você tem Envido quando possui <strong>duas cartas do mesmo naipe</strong> na mão.
-                                </p>
-                                <p class="desc" style="margin-top:10px;">
-                                    <strong>Como calcular:</strong><br>
-                                    Some o valor das duas cartas e adicione 20.<br>
-                                    <em>Exemplo: Um 7 e um 6 de Copas = 7 + 6 + 20 = 33 pontos.</em>
-                                </p>
-                                <p class="desc" style="margin-top:10px; font-size: 0.85rem; color:#aaa;">
-                                    Nota: As figuras (10, 11, 12) valem zero para a soma. Ex: Rei e 7 do mesmo naipe = 0 + 7 + 20 = 27 pontos.
-                                </p>
-                            </div>
-                        </details>
-                        <details class="ios-list-item">
-                            <summary>
-                                <div class="icon-box">🌸</div>
-                                <span class="item-title">O que é a Flor?</span>
-                                <span class="chevron-right">›</span>
-                            </summary>
-                            <div class="details-body">
-                                <p class="desc">
-                                    A Flor é a sorte grande. Acontece quando você recebe <strong>3 cartas do mesmo naipe</strong>.
-                                </p>
-                                <p class="desc" style="margin-top:10px;">
-                                    A Flor é muito valiosa e "mata" o Envido. Se alguém gritar "Flor!", não se disputa mais Envido na rodada. Vale 3 pontos direto (ou mais se o adversário também tiver Flor e quiser disputar).
-                                </p>
-                            </div>
-                        </details>
-                    </div>
+<span class="group-label">2. Preparação da Partida</span>
+<div class="ios-list-group">
+<div class="details-body">
+<ul class="clean-list">
+<li>Jogo com baralho espanhol (40 cartas)</li>
+<li>Cada jogador recebe <strong>3 cartas</strong></li>
+<li>Não existe coringa</li>
+<li>A hierarquia das cartas é fixa</li>
+</ul>
+</div>
+</div>
 
-                    <span class="group-label">4. Fase 2: O Jogo (Truco)</span>
-                    <div class="ios-list-group">
-                        <details class="ios-list-item">
-                            <summary>
-                                <div class="icon-box">🃏</div>
-                                <span class="item-title">Jogando as Cartas</span>
-                                <span class="chevron-right">›</span>
-                            </summary>
-                            <div class="details-body">
-                                <p class="desc">
-                                    Depois de resolver os pontos (Envido/Flor), começa o jogo de cartas.
-                                </p>
-                                <ul class="clean-list">
-                                    <li>Alguém joga uma carta. O próximo joga outra. Quem jogou a carta mais forte ganha a rodada (a "vaza").</li>
-                                    <li>Quem ganhou a rodada, começa jogando na próxima.</li>
-                                    <li>A dupla que ganhar <strong>2 rodadas</strong> vence a mão e ganha os pontos.</li>
-                                </ul>
-                            </div>
-                        </details>
-                        <details class="ios-list-item">
-                            <summary>
-                                <div class="icon-box">⚡</div>
-                                <span class="item-title">Pedindo Truco</span>
-                                <span class="chevron-right">›</span>
-                            </summary>
-                            <div class="details-body">
-                                <p class="desc">
-                                    Uma mão normal vale 1 ponto. Se você acha que vai ganhar, pode gritar <strong>"TRUCO!"</strong> na sua vez.
-                                </p>
-                                <p class="desc" style="margin-top:10px;">O adversário tem 3 opções:</p>
-                                <ul class="clean-list">
-                                    <li><strong>Correr:</strong> Ele desiste da mão atual. Você ganha 1 ponto e as cartas são embaralhadas de novo.</li>
-                                    <li><strong>Aceitar:</strong> A mão passa a valer 2 pontos. O jogo continua.</li>
-                                    <li><strong>Retrucar:</strong> Ele duvida e grita "Retruco" (vale 3). Você decide se corre, aceita ou pede "Vale Quatro".</li>
-                                </ul>
-                            </div>
-                        </details>
-                        <details class="ios-list-item">
-                            <summary>
-                                <div class="icon-box">⚖️</div>
-                                <span class="item-title">Empates (Canga)</span>
-                                <span class="chevron-right">›</span>
-                            </summary>
-                            <div class="details-body">
-                                <p class="desc">
-                                    Se os jogadores jogarem cartas de igual valor (ex: dois 3), a rodada empata ("canga").
-                                </p>
-                                <ul class="clean-list">
-                                    <li>Se empatar na <strong>1ª rodada</strong>: Ninguém ganhou ainda. Quem ganhar a 2ª rodada leva tudo.</li>
-                                    <li>Se empatar na <strong>2ª rodada</strong>: Quem ganhou a 1ª rodada vence.</li>
-                                    <li>Se empatar na <strong>3ª rodada</strong>: Quem ganhou a 1ª rodada vence.</li>
-                                    <li>Se empatar <strong>as três</strong>: Ninguém ganha a mão (ou ganha o carteador, dependendo do acordo prévio).</li>
-                                </ul>
-                            </div>
-                        </details>
-                    </div>
-                </div>
+<span class="group-label">3. Hierarquia das Cartas</span>
+<div class="ios-list-group">
+<div class="details-body">
+<p><strong>Cartas mais fortes (Manilhas fixas):</strong></p>
+<ul class="clean-list">
+<li>1♠ — Espada (Macho)</li>
+<li>1♣ — Paus (Fêmea)</li>
+<li>7♠ — Espada</li>
+<li>7♦ — Ouro</li>
+</ul>
 
-                <div id="regras-fodinha" class="rules-section hidden">
-                    <h1 class="page-title">Fodinha</h1>
-                    <p class="page-subtitle">Instruções para iniciantes</p>
+<p style="margin-top:10px;"><strong>Depois delas:</strong></p>
+<p>3 → 2 → 1 (♥♦) → K → Q → J → 7 (♥♣) → 6 → 5 → 4</p>
+</div>
+</div>
 
-                    <span class="group-label">1. O Conceito</span>
-                    <div class="ios-list-group">
-                        <details class="ios-list-item" open>
-                            <summary>
-                                <div class="icon-box">🎯</div>
-                                <span class="item-title">Como se joga?</span>
-                                <span class="chevron-right">›</span>
-                            </summary>
-                            <div class="details-body">
-                                <p class="desc">
-                                    Diferente do Truco, aqui é cada um por si. O objetivo não é ganhar pontos, mas sim <strong>não perder vidas</strong>.
-                                </p>
-                                <p class="desc" style="margin-top:10px;">
-                                    O jogo se baseia em <strong>previsão</strong>. Você recebe cartas e precisa dizer exatamente quantas vezes vai ganhar na mesa (quantas "vazas" vai fazer). Se errar o palpite, você perde vidas.
-                                </p>
-                            </div>
-                        </details>
-                    </div>
+<span class="group-label">4. Estrutura da Mão</span>
+<div class="ios-list-group">
+<div class="details-body">
+<p>Cada mão é disputada em <strong>até 3 rodadas</strong>.</p>
+<ul class="clean-list">
+<li>Ganha quem vencer <strong>2 rodadas</strong></li>
+<li>Quem ganha a rodada, começa a próxima</li>
+</ul>
+</div>
+</div>
 
-                    <span class="group-label">2. Passo a Passo da Rodada</span>
-                    <div class="ios-list-group">
-                        <details class="ios-list-item">
-                            <summary>
-                                <div class="icon-box">1️⃣</div>
-                                <span class="item-title">Distribuição das Cartas</span>
-                                <span class="chevron-right">›</span>
-                            </summary>
-                            <div class="details-body">
-                                <p class="desc">
-                                    A quantidade de cartas muda a cada rodada.
-                                </p>
-                                <ul class="clean-list">
-                                    <li><strong>1ª Rodada:</strong> Todos recebem apenas 1 carta.</li>
-                                    <li><strong>2ª Rodada:</strong> Todos recebem 2 cartas.</li>
-                                    <li><strong>3ª Rodada:</strong> Todos recebem 3 cartas... e assim por diante.</li>
-                                </ul>
-                                <p class="desc" style="margin-top:10px; font-size:0.8rem;">
-                                    A hierarquia (força das cartas) é exatamente a mesma do Truco.
-                                </p>
-                            </div>
-                        </details>
+<span class="group-label">5. Envido</span>
+<div class="ios-list-group">
+<div class="details-body">
+<p>O Envido é disputado <strong>antes de jogar cartas</strong>.</p>
+<p>Você tem Envido quando possui <strong>duas cartas do mesmo naipe</strong>.</p>
+<p><strong>Cálculo:</strong> Soma das cartas + 20</p>
+<p><em>Figuras (10, 11, 12) valem zero</em></p>
+<p>Exemplo: 7♥ + 6♥ = 33</p>
+</div>
+</div>
 
-                        <details class="ios-list-item">
-                            <summary>
-                                <div class="icon-box">2️⃣</div>
-                                <span class="item-title">O Palpite (A Maldade)</span>
-                                <span class="chevron-right">›</span>
-                            </summary>
-                            <div class="details-body">
-                                <p class="desc">
-                                    Depois de olhar suas cartas, cada jogador, um por vez, deve dizer: <em>"Eu vou fazer X vazas"</em>.
-                                </p>
-                                <p class="desc" style="margin-top:10px; color: #ff5555; font-weight: bold; background: rgba(255,0,0,0.1); padding:10px; border-radius:8px;">
-                                    ⚠️ A REGRA MAIS IMPORTANTE:
-                                </p>
-                                <p class="desc">
-                                    A soma de todos os palpites <strong>NUNCA</strong> pode ser igual ao número de cartas da rodada.
-                                </p>
-                                <p class="desc" style="margin-top:10px;">
-                                    <strong>Exemplo:</strong> Estão jogando 3 pessoas com 1 carta cada (Total de 3 mãos para ganhar).<br>
-                                    - Jogador A pede 1.<br>
-                                    - Jogador B pede 1.<br>
-                                    - O último jogador (C) <strong>NÃO pode pedir 1</strong> (pois 1+1+1=3). Ele é obrigado a pedir 0 ou tentar ganhar tudo (se tivesse mais cartas). Isso garante que alguém vai errar.
-                                </p>
-                            </div>
-                        </details>
+<span class="group-label">6. Flor</span>
+<div class="ios-list-group">
+<div class="details-body">
+<p>Flor acontece quando o jogador tem <strong>3 cartas do mesmo naipe</strong>.</p>
+<ul class="clean-list">
+<li>Vale <strong>3 pontos</strong></li>
+<li>Anula o Envido</li>
+<li>Pode ser disputada se ambos tiverem Flor</li>
+</ul>
+</div>
+</div>
 
-                        <details class="ios-list-item">
-                            <summary>
-                                <div class="icon-box">3️⃣</div>
-                                <span class="item-title">Jogando e Perdendo Vidas</span>
-                                <span class="chevron-right">›</span>
-                            </summary>
-                            <div class="details-body">
-                                <p class="desc">
-                                    Jogam-se as cartas na mesa como no Truco. Quem tiver a maior carta leva a vaza.
-                                </p>
-                                <p class="desc" style="margin-top:10px;">
-                                    Ao final, contam-se quantas vazas cada um ganhou e compara-se com o palpite inicial.
-                                </p>
-                                <ul class="clean-list">
-                                    <li><strong>Acertou em cheio?</strong> Não perde nenhuma vida.</li>
-                                    <li><strong>Errou?</strong> Perde a diferença. (Ex: Falou 2 e fez 0 = Perde 2 vidas. Falou 0 e fez 1 = Perde 1 vida).</li>
-                                </ul>
-                                <p class="desc" style="margin-top:15px;">
-                                    Quem chegar a 0 vidas (ou atingir o limite de perdas definido) é eliminado. O último sobrevivente vence.
-                                </p>
-                            </div>
-                        </details>
-                    </div>
-                </div>
+<span class="group-label">7. Truco, Retruco e Vale Quatro</span>
+<div class="ios-list-group">
+<div class="details-body">
+<ul class="clean-list">
+<li>Mão normal: 1 ponto</li>
+<li>Truco: vale 2</li>
+<li>Retruco: vale 3</li>
+<li>Vale Quatro: vale 4</li>
+</ul>
+<p>Ao pedir Truco, o adversário pode:</p>
+<ul class="clean-list">
+<li>Correr (desistir)</li>
+<li>Aceitar</li>
+<li>Aumentar</li>
+</ul>
+</div>
+</div>
 
-                <div style="height: 60px;"></div>
-            </div>
-        </div>
-    </div>
+<span class="group-label">8. Empates (Canga)</span>
+<div class="ios-list-group">
+<div class="details-body">
+<ul class="clean-list">
+<li>Empate na 1ª rodada → quem ganhar a 2ª leva</li>
+<li>Empate na 2ª → vale a 1ª</li>
+<li>Empate em todas → regra combinada</li>
+</ul>
+</div>
+</div>
 
-    <script>
-        function mudarAbaRegras(aba, btn) {
-            // Remove classe ativa de todos botões
-            document.querySelectorAll('.segment-opt').forEach(b => b.classList.remove('active'));
-            // Adiciona no clicado
-            btn.classList.add('active');
-            
-            // Move o "glider" (fundo branco animado)
-            const glider = document.getElementById('rules-glider');
-            const buttons = Array.from(btn.parentNode.querySelectorAll('button'));
-            const index = buttons.indexOf(btn);
-            glider.style.transform = `translateX(${index * 100}%)`;
+<span class="group-label">9. Glossário Rápido</span>
+<div class="ios-list-group">
+<div class="details-body">
+<ul class="clean-list">
+<li><strong>Mão:</strong> conjunto de rodadas</li>
+<li><strong>Vaza:</strong> rodada ganha</li>
+<li><strong>Canga:</strong> empate</li>
+<li><strong>Correr:</strong> desistir</li>
+</ul>
+</div>
+</div>
 
-            // Troca o conteúdo visível usando a classe 'hidden' corretamente
-            const trucoSec = document.getElementById('regras-truco');
-            const fodinhaSec = document.getElementById('regras-fodinha');
+</div>
 
-            if (aba === 'truco') {
-                trucoSec.classList.remove('hidden');
-                fodinhaSec.classList.add('hidden');
-            } else {
-                trucoSec.classList.add('hidden');
-                fodinhaSec.classList.remove('hidden');
-            }
-        }
-    </script>
+<!-- ================= FODINHA ================= -->
+<div id="regras-fodinha" class="hidden">
+
+<h1 class="page-title">Fodinha</h1>
+<p class="page-subtitle">Manual completo — jogo de previsão</p>
+
+<span class="group-label">1. Objetivo</span>
+<div class="ios-list-group">
+<div class="details-body">
+<p>O objetivo é <strong>não perder vidas</strong>.</p>
+<p>Quem sobreviver até o final vence.</p>
+</div>
+</div>
+
+<span class="group-label">2. Estrutura das Rodadas</span>
+<div class="ios-list-group">
+<div class="details-body">
+<p>O número de cartas aumenta a cada rodada:</p>
+<ul class="clean-list">
+<li>Rodada 1 → 1 carta</li>
+<li>Rodada 2 → 2 cartas</li>
+<li>Rodada 3 → 3 cartas...</li>
+</ul>
+</div>
+</div>
+
+<span class="group-label">3. O Palpite (Regra Principal)</span>
+<div class="ios-list-group">
+<div class="details-body">
+<p>Cada jogador diz quantas vazas acredita que vai ganhar.</p>
+<p><strong>A soma dos palpites NÃO pode ser igual ao número de cartas.</strong></p>
+<p>Isso garante que alguém irá errar.</p>
+</div>
+</div>
+
+<span class="group-label">4. Perda de Vidas</span>
+<div class="ios-list-group">
+<div class="details-body">
+<ul class="clean-list">
+<li>Acertou → perde 0</li>
+<li>Errou → perde a diferença</li>
+</ul>
+<p>Exemplo: pediu 2 e fez 0 → perde 2 vidas</p>
+</div>
+</div>
+
+<span class="group-label">5. Eliminação e Vitória</span>
+<div class="ios-list-group">
+<div class="details-body">
+<p>Quem atingir o limite de perdas é eliminado.</p>
+<p>O último jogador vivo vence.</p>
+</div>
+</div>
+
+</div>
+
+<div style="height:60px"></div>
+</div>
+</div>
+</div>
+
+<script>
+function mudarAba(aba, btn) {
+document.querySelectorAll('.segment-opt').forEach(b => b.classList.remove('active'));
+btn.classList.add('active');
+
+const glider = document.getElementById('rules-glider');
+const index = [...btn.parentNode.querySelectorAll('button')].indexOf(btn);
+glider.style.transform = `translateX(${index * 100}%)`;
+
+document.getElementById('regras-truco').classList.toggle('hidden', aba !== 'truco');
+document.getElementById('regras-fodinha').classList.toggle('hidden', aba !== 'fodinha');
+}
+</script>
+
 </body>
 </html>
