@@ -25,7 +25,7 @@ let blockClick = false;
 window.onload = () => {
     try {
         carregarEstado();
-    } catch (e) {
+    } catch {
         localStorage.removeItem(STORAGE_KEY);
     }
 
@@ -239,12 +239,38 @@ function mudarVidaFodinha(index, delta) {
     renderGameFodinha();
 }
 
-/* ===================== UTIL ===================== */
+/* ===================== MODAIS iOS ===================== */
 function confirmarSaida() {
-    if (!confirm("Sair para o menu? O jogo será perdido.")) return;
-    resetarParaMenu();
+    abrirModal(
+        "Sair da Partida",
+        "O jogo atual será encerrado e a pontuação perdida.",
+        "Sair",
+        () => resetarParaMenu()
+    );
 }
 
+function confirmarZerar() {
+    abrirModal(
+        "Zerar Pontuação",
+        "Todos os pontos voltarão para zero.",
+        "Zerar",
+        () => {
+            if (gameState.mode === 'truco') {
+                gameState.truco.s1 = 0;
+                gameState.truco.s2 = 0;
+                atualizarTelaTruco();
+            } else {
+                gameState.fodinha.players.forEach(p => p.score = 0);
+                renderGameFodinha();
+            }
+            gameState.ativo = true;
+            stopConfetti();
+            salvarTudo();
+        }
+    );
+}
+
+/* ===================== RESET ===================== */
 function resetarParaMenu() {
     gameState.ativo = false;
     stopConfetti();
@@ -262,26 +288,26 @@ function resetarParaMenu() {
     renderSetupFodinha();
 }
 
-function confirmarZerar() {
-    if (!confirm("Zerar pontuação?")) return;
+/* ===================== MODAL CORE ===================== */
+function abrirModal(titulo, mensagem, textoConfirmar, acaoConfirmar) {
+    const modal = document.getElementById('custom-modal');
+    document.getElementById('modal-title').innerText = titulo;
+    document.getElementById('modal-msg').innerText = mensagem;
 
-    if (gameState.mode === 'truco') {
-        gameState.truco.s1 = 0;
-        gameState.truco.s2 = 0;
-        atualizarTelaTruco();
-    } else {
-        gameState.fodinha.players.forEach(p => p.score = 0);
-        renderGameFodinha();
-    }
+    const btnConfirm = document.getElementById('modal-btn-confirm');
+    const btnCancel = document.getElementById('modal-btn-cancel');
 
-    gameState.ativo = true;
-    stopConfetti();
-    salvarTudo();
-}
+    const novoConfirm = btnConfirm.cloneNode(true);
+    btnConfirm.parentNode.replaceChild(novoConfirm, btnConfirm);
 
-function mostrarVitoria() {
-    gameState.ativo = false;
-    startConfetti();
+    novoConfirm.innerText = textoConfirmar || "OK";
+    novoConfirm.onclick = () => {
+        if (acaoConfirmar) acaoConfirmar();
+        modal.classList.add('hidden');
+    };
+
+    btnCancel.onclick = () => modal.classList.add('hidden');
+    modal.classList.remove('hidden');
 }
 
 /* ===================== STORAGE ===================== */
@@ -318,9 +344,9 @@ function startConfetti() {
     const canvas = document.getElementById('confetti-canvas');
     if (!canvas || confettiActive) return;
 
-    canvas.style.display = 'block'; // 👈 GARANTE VISIBILIDADE
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.style.display = 'block';
+    canvas.width = innerWidth;
+    canvas.height = innerHeight;
 
     confettiCtx = canvas.getContext('2d');
     confettiActive = true;
@@ -355,14 +381,7 @@ function animateConfetti() {
 function stopConfetti() {
     const canvas = document.getElementById('confetti-canvas');
     confettiActive = false;
-
     if (anim) cancelAnimationFrame(anim);
-
-    if (confettiCtx) {
-        confettiCtx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-
-    if (canvas) {
-        canvas.style.display = 'none'; // 👈 ESCONDE DE VEZ
-    }
+    if (confettiCtx) confettiCtx.clearRect(0, 0, canvas.width, canvas.height);
+    if (canvas) canvas.style.display = 'none';
 }
