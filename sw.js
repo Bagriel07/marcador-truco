@@ -1,4 +1,4 @@
-const CACHE = 'truco-v37';
+const CACHE = 'truco-v38';
 
 const ASSETS = [
   './',
