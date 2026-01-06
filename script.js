@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'marcador_truco_final_v4'; // Key nova para limpar cache bugado
+const STORAGE_KEY = 'marcador_truco_final_v5_fixed';
 
 /* ================= ESTADO GLOBAL ================= */
 let gameState = {
@@ -20,8 +20,10 @@ let gameState = {
     }
 };
 
+// Variáveis de controle de gestos
 let touchStartY = 0;
 let isSwiping = false;
+let lastInteraction = 0; // Trava de segurança para evitar clique duplo
 
 /* ================= INIT ================= */
 window.addEventListener('DOMContentLoaded', () => {
@@ -147,12 +149,11 @@ function iniciarJogo() {
         gameState.truco.n1 = inputVal('input-time1');
         gameState.truco.n2 = inputVal('input-time2');
         
-        // CORREÇÃO CRÍTICA: Lê o botão que está visualmente ativo agora
         const btnAtivo = document.querySelector('#setup-truco .segmented-control .segment-opt.active');
         if (btnAtivo) {
             gameState.truco.max = parseInt(btnAtivo.innerText) || 12;
         } else {
-            gameState.truco.max = 12; // Fallback seguro
+            gameState.truco.max = 12;
         }
 
         atualizarTelaTruco();
@@ -168,7 +169,7 @@ function iniciarJogo() {
     salvarEstado();
 }
 
-/* ================= TRUCO ================= */
+/* ================= TRUCO (LÓGICA CORRIGIDA) ================= */
 function mudarPontos(time, delta) {
     alterarPonto(time, delta);
 }
@@ -192,32 +193,50 @@ function criarGesto(id, time) {
     }, { passive: true });
 
     el.addEventListener('touchmove', e => {
-        if (Math.abs(e.touches[0].clientY - touchStartY) > 10) isSwiping = true;
+        // Se moveu mais de 10px, consideramos que está tentando arrastar
+        if (Math.abs(e.touches[0].clientY - touchStartY) > 10) {
+            isSwiping = true;
+        }
     }, { passive: true });
 
     el.addEventListener('touchend', e => {
         const dy = e.changedTouches[0].clientY - touchStartY;
+        
+        // Se arrastou mais de 60px (Swipe real)
         if (Math.abs(dy) > 60) {
             isSwiping = true;
-            alterarPonto(time, dy < 0 ? 1 : -1);
+            lastInteraction = Date.now(); // Marca o tempo do swipe
+            
+            // Lógica: Cima (-dy) = +1, Baixo (+dy) = -1
+            const pontos = dy < 0 ? 1 : -1;
+            alterarPonto(time, pontos);
+        } else {
+            // Se foi um movimento muito curto, não é swipe, libera pro click
+            isSwiping = false;
         }
     });
 }
 
 function pontuarTap(time) {
-    setTimeout(() => {
-        if (!isSwiping) alterarPonto(time, 1);
-        isSwiping = false;
-    }, 50);
+    const agora = Date.now();
+    
+    // SEGURANÇA: Se houve um swipe nos últimos 500ms, ignora este clique!
+    // Isso impede que o swipe gere um clique fantasma e conte 2 pontos.
+    if (agora - lastInteraction < 500) return;
+    
+    // Se a flag de swipe ainda estiver ativa por algum motivo, ignora
+    if (isSwiping) return; 
+
+    alterarPonto(time, 1);
 }
 
 function alterarPonto(time, delta) {
     if (!gameState.ativo) return;
     const t = gameState.truco;
     
+    // Aplica o delta (garante que é sempre 1 por vez nas chamadas de swipe)
     if (time === 1) t.s1 += delta; else t.s2 += delta;
     
-    // Proteção de limites
     t.s1 = Math.max(0, Math.min(t.max, t.s1));
     t.s2 = Math.max(0, Math.min(t.max, t.s2));
 
@@ -235,7 +254,6 @@ function alterarPonto(time, delta) {
 function atualizarTelaTruco() {
     const s1 = document.getElementById('score-time1');
     const s2 = document.getElementById('score-time2');
-    
     if(s1) s1.innerText = gameState.truco.s1;
     if(s2) s2.innerText = gameState.truco.s2;
     
@@ -262,17 +280,14 @@ function renderGameFodinha() {
     const displayMax = document.getElementById('display-fodinha-max');
     if(displayMax) displayMax.innerText = gameState.fodinha.maxVidas;
 
-    // Lógica da Coroa: Apenas 1 jogador vivo
     const vivos = gameState.fodinha.players.filter(p => p.score < gameState.fodinha.maxVidas);
     const temVencedor = vivos.length === 1 && gameState.fodinha.players.length > 1;
 
     gameState.fodinha.players.forEach((p, i) => {
         const eliminado = p.score >= gameState.fodinha.maxVidas;
-        // Se há um vencedor, e este jogador NÃO está eliminado, ele é o rei
         const ehRei = temVencedor && !eliminado;
         
         const card = document.createElement('div');
-        // Aplica a classe 'winner' se for o rei
         card.className = `fodinha-card ${eliminado ? 'eliminated' : ''} ${ehRei ? 'winner' : ''}`;
         
         card.innerHTML = `
