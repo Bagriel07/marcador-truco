@@ -21,23 +21,17 @@ let gameState = {
 
 let blockClick = false;
 
-/* ===================== INIT ===================== */
+/* ================= INIT ================= */
 window.onload = () => {
-    try {
-        carregarEstado();
-    } catch {
-        localStorage.removeItem(STORAGE_KEY);
-    }
+    try { carregarEstado(); }
+    catch { localStorage.removeItem(STORAGE_KEY); }
 
     renderSetupFodinha();
 
-    window.confetti = {
-        start: startConfetti,
-        stop: stopConfetti
-    };
+    window.confetti = { start: startConfetti, stop: stopConfetti };
 };
 
-/* ===================== MODOS ===================== */
+/* ================= MODOS ================= */
 function mudarModo(modo, btn) {
     gameState.mode = modo;
 
@@ -46,97 +40,82 @@ function mudarModo(modo, btn) {
     btn.classList.add('active');
 
     const glider = document.getElementById('mode-glider');
-    const buttons = Array.from(btn.parentNode.querySelectorAll('button'));
-    const index = buttons.indexOf(btn);
+    const index = [...btn.parentNode.querySelectorAll('button')].indexOf(btn);
     glider.style.transform = `translateX(${index * 100}%)`;
 
     document.getElementById('setup-truco').classList.toggle('hidden', modo !== 'truco');
     document.getElementById('setup-fodinha').classList.toggle('hidden', modo !== 'fodinha');
 }
 
-/* ===================== SETUP TRUCO ===================== */
+/* ================= SETUP TRUCO ================= */
 function selPonto(valor, btn) {
     gameState.truco.max = valor;
     document.getElementById('input-max').value = valor;
 
-    const container = btn.parentNode;
-    container.querySelectorAll('.segment-opt').forEach(b => b.classList.remove('active'));
+    const c = btn.parentNode;
+    c.querySelectorAll('.segment-opt').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 
-    const buttons = Array.from(container.querySelectorAll('button'));
-    const index = buttons.indexOf(btn);
-    container.querySelector('.segment-glider').style.transform = `translateX(${index * 100}%)`;
+    const index = [...c.querySelectorAll('button')].indexOf(btn);
+    c.querySelector('.segment-glider').style.transform = `translateX(${index * 100}%)`;
 }
 
-/* ===================== SETUP FODINHA ===================== */
+/* ================= SETUP FODINHA ================= */
 function addFodinhaPlayer() {
     gameState.fodinha.players.push({ name: "", score: 0 });
     renderSetupFodinha();
-
-    setTimeout(() => {
-        const c = document.querySelector('.dark-scroll-container');
-        if (c) c.scrollTop = c.scrollHeight;
-    }, 50);
 }
 
-function removeFodinhaPlayer(index) {
+function removeFodinhaPlayer(i) {
     if (gameState.fodinha.players.length <= 2) return;
-    gameState.fodinha.players.splice(index, 1);
+    gameState.fodinha.players.splice(i, 1);
     renderSetupFodinha();
 }
 
-function updatePlayerName(index, value) {
-    gameState.fodinha.players[index].name = value;
+function updatePlayerName(i, v) {
+    gameState.fodinha.players[i].name = v;
 }
 
 function renderSetupFodinha() {
-    const container = document.getElementById('players-container');
-    container.innerHTML = '';
+    const c = document.getElementById('players-container');
+    c.innerHTML = '';
 
     gameState.fodinha.players.forEach((p, i) => {
-        const div = document.createElement('div');
-        div.className = 'player-input-card';
-        div.innerHTML = `
-            <div style="font-size:0.8rem; margin-right:10px;">${i + 1}</div>
-            <input type="text"
-                value="${p.name}"
-                placeholder="Nome do Jogador"
-                oninput="updatePlayerName(${i}, this.value)">
+        const d = document.createElement('div');
+        d.className = 'player-input-card';
+        d.innerHTML = `
+            <div style="font-size:0.8rem;margin-right:10px">${i+1}</div>
+            <input value="${p.name}" placeholder="Nome do Jogador"
+                   oninput="updatePlayerName(${i},this.value)">
             ${gameState.fodinha.players.length > 2
                 ? `<button class="btn-remove-mini" onclick="removeFodinhaPlayer(${i})">×</button>`
-                : ''
-            }
+                : ''}
         `;
-        container.appendChild(div);
+        c.appendChild(d);
     });
 }
 
-/* ===================== INICIAR JOGO ===================== */
+/* ================= INICIAR JOGO ================= */
 function iniciarJogo() {
     gameState.ativo = true;
 
     if (gameState.mode === 'truco') {
-        gameState.truco.n1 = document.getElementById('input-time1').value.trim();
-        gameState.truco.n2 = document.getElementById('input-time2').value.trim();
+        gameState.truco.n1 = input('input-time1');
+        gameState.truco.n2 = input('input-time2');
 
         atualizarTelaTruco();
-        document.getElementById('setup-screen').classList.add('hidden');
-        document.getElementById('game-screen-truco').classList.remove('hidden');
-
+        mostrarTela('game-screen-truco');
         setupTouchHandlers();
     } else {
-        const max = parseInt(document.getElementById('input-vidas-max').value);
-        gameState.fodinha.maxVidas = max || 5;
-
+        gameState.fodinha.maxVidas = parseInt(input('input-vidas-max')) || 5;
         renderGameFodinha();
-        document.getElementById('setup-screen').classList.add('hidden');
-        document.getElementById('game-screen-fodinha').classList.remove('hidden');
+        mostrarTela('game-screen-fodinha');
     }
 
     salvarTudo();
 }
 
-/* ===================== TRUCO ===================== */
+/* ================= TRUCO ================= */
 function setupTouchHandlers() {
     setupCardTouch('card-time1', 1);
     setupCardTouch('card-time2', 2);
@@ -148,18 +127,18 @@ function setupCardTouch(id, time) {
 
     let startY = 0;
 
-    card.addEventListener('touchstart', e => {
+    card.ontouchstart = e => {
         startY = e.touches[0].clientY;
         blockClick = false;
-    }, { passive: true });
+    };
 
-    card.addEventListener('touchend', e => {
-        const diffY = e.changedTouches[0].clientY - startY;
-        if (Math.abs(diffY) > 50) {
+    card.ontouchend = e => {
+        const diff = e.changedTouches[0].clientY - startY;
+        if (Math.abs(diff) > 50) {
             blockClick = true;
-            mudarPontos(time, diffY < 0 ? 1 : -1);
+            mudarPontos(time, diff < 0 ? 1 : -1);
         }
-    });
+    };
 }
 
 function pontuarTap(time) {
@@ -174,16 +153,26 @@ function mudarPontos(time, qtd) {
     if (!gameState.ativo) return;
 
     const t = gameState.truco;
+
     if (time === 1) t.s1 += qtd;
     else t.s2 += qtd;
 
+    // limita corretamente
     t.s1 = Math.max(0, Math.min(t.max, t.s1));
     t.s2 = Math.max(0, Math.min(t.max, t.s2));
 
-    if (t.s1 === t.max || t.s2 === t.max) mostrarVitoria();
-
-    salvarTudo();
     atualizarTelaTruco();
+    salvarTudo();
+
+    // vitória APÓS atualizar a tela
+    if (t.s1 === t.max || t.s2 === t.max) {
+        finalizarPartida();
+    }
+}
+
+function finalizarPartida() {
+    gameState.ativo = false;
+    startConfetti();
 }
 
 function atualizarTelaTruco() {
@@ -193,57 +182,49 @@ function atualizarTelaTruco() {
     document.getElementById('nome-time2').innerText = gameState.truco.n2 || "ELES";
     document.getElementById('display-meta').innerText = gameState.truco.max;
 
-    document.getElementById('card-time1').classList.toggle(
-        'winning',
-        gameState.truco.s1 === gameState.truco.max
-    );
-    document.getElementById('card-time2').classList.toggle(
-        'winning',
-        gameState.truco.s2 === gameState.truco.max
-    );
+    document.getElementById('card-time1')
+        .classList.toggle('winning', gameState.truco.s1 === gameState.truco.max);
+    document.getElementById('card-time2')
+        .classList.toggle('winning', gameState.truco.s2 === gameState.truco.max);
 }
 
-/* ===================== FODINHA ===================== */
+/* ================= FODINHA ================= */
 function renderGameFodinha() {
-    const grid = document.getElementById('fodinha-game-grid');
-    grid.innerHTML = '';
+    const g = document.getElementById('fodinha-game-grid');
+    g.innerHTML = '';
 
     document.getElementById('display-fodinha-max').innerText =
         gameState.fodinha.maxVidas;
 
     gameState.fodinha.players.forEach((p, i) => {
-        const eliminado = p.score >= gameState.fodinha.maxVidas;
-        const div = document.createElement('div');
-        div.className = `fodinha-card ${eliminado ? 'eliminated' : ''}`;
-
-        div.innerHTML = `
-            <div class="fodinha-name">${p.name || `P${i + 1}`}</div>
+        const d = document.createElement('div');
+        d.className = `fodinha-card ${p.score >= gameState.fodinha.maxVidas ? 'eliminated' : ''}`;
+        d.innerHTML = `
+            <div class="fodinha-name">${p.name || `P${i+1}`}</div>
             <div class="fodinha-score">${p.score}</div>
             <div class="fodinha-controls">
-                <button class="btn-fodinha-ctrl" onclick="mudarVidaFodinha(${i}, -1)">−</button>
-                <button class="btn-fodinha-ctrl btn-fodinha-plus" onclick="mudarVidaFodinha(${i}, 1)">+</button>
+                <button class="btn-fodinha-ctrl" onclick="mudarVidaFodinha(${i},-1)">−</button>
+                <button class="btn-fodinha-ctrl btn-fodinha-plus" onclick="mudarVidaFodinha(${i},1)">+</button>
             </div>
         `;
-        grid.appendChild(div);
+        g.appendChild(d);
     });
 }
 
-function mudarVidaFodinha(index, delta) {
-    const p = gameState.fodinha.players[index];
-    if (delta > 0 && p.score >= gameState.fodinha.maxVidas) return;
+function mudarVidaFodinha(i, d) {
+    const p = gameState.fodinha.players[i];
+    if (d > 0 && p.score >= gameState.fodinha.maxVidas) return;
 
-    p.score += delta;
-    if (p.score < 0) p.score = 0;
-
+    p.score = Math.max(0, p.score + d);
     salvarTudo();
     renderGameFodinha();
 }
 
-/* ===================== MODAIS iOS ===================== */
+/* ================= MODAIS ================= */
 function confirmarSaida() {
     abrirModal(
         "Sair da Partida",
-        "O jogo atual será encerrado e a pontuação perdida.",
+        "O jogo atual será encerrado.",
         "Sair",
         () => resetarParaMenu()
     );
@@ -270,15 +251,13 @@ function confirmarZerar() {
     );
 }
 
-/* ===================== RESET ===================== */
+/* ================= RESET ================= */
 function resetarParaMenu() {
     gameState.ativo = false;
     stopConfetti();
     localStorage.removeItem(STORAGE_KEY);
 
-    document.getElementById('game-screen-truco').classList.add('hidden');
-    document.getElementById('game-screen-fodinha').classList.add('hidden');
-    document.getElementById('setup-screen').classList.remove('hidden');
+    mostrarTela('setup-screen');
 
     gameState.truco.s1 = 0;
     gameState.truco.s2 = 0;
@@ -288,29 +267,17 @@ function resetarParaMenu() {
     renderSetupFodinha();
 }
 
-/* ===================== MODAL CORE ===================== */
-function abrirModal(titulo, mensagem, textoConfirmar, acaoConfirmar) {
-    const modal = document.getElementById('custom-modal');
-    document.getElementById('modal-title').innerText = titulo;
-    document.getElementById('modal-msg').innerText = mensagem;
-
-    const btnConfirm = document.getElementById('modal-btn-confirm');
-    const btnCancel = document.getElementById('modal-btn-cancel');
-
-    const novoConfirm = btnConfirm.cloneNode(true);
-    btnConfirm.parentNode.replaceChild(novoConfirm, btnConfirm);
-
-    novoConfirm.innerText = textoConfirmar || "OK";
-    novoConfirm.onclick = () => {
-        if (acaoConfirmar) acaoConfirmar();
-        modal.classList.add('hidden');
-    };
-
-    btnCancel.onclick = () => modal.classList.add('hidden');
-    modal.classList.remove('hidden');
+/* ================= UTIL ================= */
+function mostrarTela(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
 }
 
-/* ===================== STORAGE ===================== */
+function input(id) {
+    return document.getElementById(id)?.value.trim() || "";
+}
+
+/* ================= STORAGE ================= */
 function salvarTudo() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
 }
@@ -325,19 +292,18 @@ function carregarEstado() {
     document.getElementById('input-time2').value = gameState.truco.n2 || "";
 
     if (gameState.ativo) {
-        document.getElementById('setup-screen').classList.add('hidden');
         if (gameState.mode === 'truco') {
-            document.getElementById('game-screen-truco').classList.remove('hidden');
+            mostrarTela('game-screen-truco');
             atualizarTelaTruco();
             setupTouchHandlers();
         } else {
-            document.getElementById('game-screen-fodinha').classList.remove('hidden');
+            mostrarTela('game-screen-fodinha');
             renderGameFodinha();
         }
     }
 }
 
-/* ===================== CONFETTI ===================== */
+/* ================= CONFETTI ================= */
 let confettiCtx, confettiActive = false, particles = [], anim;
 
 function startConfetti() {
