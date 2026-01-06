@@ -1,11 +1,12 @@
-const STORAGE_KEY = 'marcador_truco_fodinha_final_v6';
+const STORAGE_KEY = 'marcador_truco_fodinha_final_ok';
 
+/* ================= ESTADO GLOBAL ================= */
 let gameState = {
     mode: 'truco',
     ativo: false,
     truco: {
-        n1: "",
-        n2: "",
+        n1: '',
+        n2: '',
         max: 12,
         s1: 0,
         s2: 0
@@ -13,25 +14,21 @@ let gameState = {
     fodinha: {
         maxVidas: 5,
         players: [
-            { name: "", score: 0 },
-            { name: "", score: 0 }
+            { name: '', score: 0 },
+            { name: '', score: 0 }
         ]
     }
 };
 
-let blockClick = false;
+let bloqueioTap = false;
 
 /* ================= INIT ================= */
 window.onload = () => {
-    try { carregarEstado(); }
-    catch { localStorage.removeItem(STORAGE_KEY); }
-
+    carregarEstado();
     renderSetupFodinha();
-
-    window.confetti = { start: startConfetti, stop: stopConfetti };
 };
 
-/* ================= MODOS ================= */
+/* ================= MODO ================= */
 function mudarModo(modo, btn) {
     gameState.mode = modo;
 
@@ -40,8 +37,8 @@ function mudarModo(modo, btn) {
     btn.classList.add('active');
 
     const glider = document.getElementById('mode-glider');
-    const index = [...btn.parentNode.querySelectorAll('button')].indexOf(btn);
-    glider.style.transform = `translateX(${index * 100}%)`;
+    const buttons = [...btn.parentNode.querySelectorAll('button')];
+    glider.style.transform = `translateX(${buttons.indexOf(btn) * 100}%)`;
 
     document.getElementById('setup-truco').classList.toggle('hidden', modo !== 'truco');
     document.getElementById('setup-fodinha').classList.toggle('hidden', modo !== 'fodinha');
@@ -50,7 +47,6 @@ function mudarModo(modo, btn) {
 /* ================= SETUP TRUCO ================= */
 function selPonto(valor, btn) {
     gameState.truco.max = valor;
-    document.getElementById('input-max').value = valor;
 
     const c = btn.parentNode;
     c.querySelectorAll('.segment-opt').forEach(b => b.classList.remove('active'));
@@ -61,21 +57,6 @@ function selPonto(valor, btn) {
 }
 
 /* ================= SETUP FODINHA ================= */
-function addFodinhaPlayer() {
-    gameState.fodinha.players.push({ name: "", score: 0 });
-    renderSetupFodinha();
-}
-
-function removeFodinhaPlayer(i) {
-    if (gameState.fodinha.players.length <= 2) return;
-    gameState.fodinha.players.splice(i, 1);
-    renderSetupFodinha();
-}
-
-function updatePlayerName(i, v) {
-    gameState.fodinha.players[i].name = v;
-}
-
 function renderSetupFodinha() {
     const c = document.getElementById('players-container');
     c.innerHTML = '';
@@ -84,102 +65,103 @@ function renderSetupFodinha() {
         const d = document.createElement('div');
         d.className = 'player-input-card';
         d.innerHTML = `
-            <div style="font-size:0.8rem;margin-right:10px">${i+1}</div>
+            <div style="margin-right:10px">${i + 1}</div>
             <input value="${p.name}" placeholder="Nome do Jogador"
-                   oninput="updatePlayerName(${i},this.value)">
+                   oninput="gameState.fodinha.players[${i}].name=this.value">
             ${gameState.fodinha.players.length > 2
-                ? `<button class="btn-remove-mini" onclick="removeFodinhaPlayer(${i})">×</button>`
+                ? `<button class="btn-remove-mini" onclick="removerJogador(${i})">×</button>`
                 : ''}
         `;
         c.appendChild(d);
     });
 }
 
-/* ================= INICIAR JOGO ================= */
+function addFodinhaPlayer() {
+    gameState.fodinha.players.push({ name: '', score: 0 });
+    renderSetupFodinha();
+}
+
+function removerJogador(i) {
+    if (gameState.fodinha.players.length <= 2) return;
+    gameState.fodinha.players.splice(i, 1);
+    renderSetupFodinha();
+}
+
+/* ================= INICIAR ================= */
 function iniciarJogo() {
     gameState.ativo = true;
 
     if (gameState.mode === 'truco') {
         gameState.truco.n1 = input('input-time1');
         gameState.truco.n2 = input('input-time2');
-
         atualizarTelaTruco();
         mostrarTela('game-screen-truco');
-        setupTouchHandlers();
+        setupGestos();
     } else {
         gameState.fodinha.maxVidas = parseInt(input('input-vidas-max')) || 5;
         renderGameFodinha();
         mostrarTela('game-screen-fodinha');
     }
 
-    salvarTudo();
+    salvarEstado();
 }
 
 /* ================= TRUCO ================= */
-function setupTouchHandlers() {
-    setupCardTouch('card-time1', 1);
-    setupCardTouch('card-time2', 2);
+function setupGestos() {
+    criarGesto('card-time1', 1);
+    criarGesto('card-time2', 2);
 }
 
-function setupCardTouch(id, time) {
-    const card = document.getElementById(id);
-    if (!card) return;
+function criarGesto(id, time) {
+    const el = document.getElementById(id);
+    let y0 = 0;
 
-    let startY = 0;
-
-    card.ontouchstart = e => {
-        startY = e.touches[0].clientY;
-        blockClick = false;
+    el.ontouchstart = e => {
+        y0 = e.touches[0].clientY;
+        bloqueioTap = false;
     };
 
-    card.ontouchend = e => {
-        const diff = e.changedTouches[0].clientY - startY;
-        if (Math.abs(diff) > 50) {
-            blockClick = true;
-            mudarPontos(time, diff < 0 ? 1 : -1);
+    el.ontouchend = e => {
+        const dy = e.changedTouches[0].clientY - y0;
+        if (Math.abs(dy) > 50) {
+            bloqueioTap = true;
+            alterarPonto(time, dy < 0 ? 1 : -1);
         }
     };
 }
 
 function pontuarTap(time) {
-    if (blockClick) {
-        blockClick = false;
+    if (bloqueioTap) {
+        bloqueioTap = false;
         return;
     }
-    mudarPontos(time, 1);
+    alterarPonto(time, 1);
 }
 
-function mudarPontos(time, qtd) {
+function alterarPonto(time, delta) {
     if (!gameState.ativo) return;
 
     const t = gameState.truco;
+    if (time === 1) t.s1 += delta;
+    else t.s2 += delta;
 
-    if (time === 1) t.s1 += qtd;
-    else t.s2 += qtd;
-
-    // limita corretamente
     t.s1 = Math.max(0, Math.min(t.max, t.s1));
     t.s2 = Math.max(0, Math.min(t.max, t.s2));
 
     atualizarTelaTruco();
-    salvarTudo();
+    salvarEstado();
 
-    // vitória APÓS atualizar a tela
     if (t.s1 === t.max || t.s2 === t.max) {
-        finalizarPartida();
+        gameState.ativo = false;
+        startConfetti();
     }
-}
-
-function finalizarPartida() {
-    gameState.ativo = false;
-    startConfetti();
 }
 
 function atualizarTelaTruco() {
     document.getElementById('score-time1').innerText = gameState.truco.s1;
     document.getElementById('score-time2').innerText = gameState.truco.s2;
-    document.getElementById('nome-time1').innerText = gameState.truco.n1 || "NÓS";
-    document.getElementById('nome-time2').innerText = gameState.truco.n2 || "ELES";
+    document.getElementById('nome-time1').innerText = gameState.truco.n1 || 'NÓS';
+    document.getElementById('nome-time2').innerText = gameState.truco.n2 || 'ELES';
     document.getElementById('display-meta').innerText = gameState.truco.max;
 
     document.getElementById('card-time1')
@@ -200,41 +182,40 @@ function renderGameFodinha() {
         const d = document.createElement('div');
         d.className = `fodinha-card ${p.score >= gameState.fodinha.maxVidas ? 'eliminated' : ''}`;
         d.innerHTML = `
-            <div class="fodinha-name">${p.name || `P${i+1}`}</div>
+            <div class="fodinha-name">${p.name || `P${i + 1}`}</div>
             <div class="fodinha-score">${p.score}</div>
             <div class="fodinha-controls">
-                <button class="btn-fodinha-ctrl" onclick="mudarVidaFodinha(${i},-1)">−</button>
-                <button class="btn-fodinha-ctrl btn-fodinha-plus" onclick="mudarVidaFodinha(${i},1)">+</button>
+                <button onclick="alterarVida(${i},-1)">−</button>
+                <button onclick="alterarVida(${i},1)">+</button>
             </div>
         `;
         g.appendChild(d);
     });
 }
 
-function mudarVidaFodinha(i, d) {
+function alterarVida(i, d) {
     const p = gameState.fodinha.players[i];
     if (d > 0 && p.score >= gameState.fodinha.maxVidas) return;
-
     p.score = Math.max(0, p.score + d);
-    salvarTudo();
+    salvarEstado();
     renderGameFodinha();
 }
 
 /* ================= MODAIS ================= */
 function confirmarSaida() {
     abrirModal(
-        "Sair da Partida",
-        "O jogo atual será encerrado.",
-        "Sair",
-        () => resetarParaMenu()
+        'Sair da partida',
+        'O jogo atual será encerrado.',
+        'Sair',
+        resetar
     );
 }
 
 function confirmarZerar() {
     abrirModal(
-        "Zerar Pontuação",
-        "Todos os pontos voltarão para zero.",
-        "Zerar",
+        'Zerar pontuação',
+        'Os pontos voltarão para zero.',
+        'Zerar',
         () => {
             if (gameState.mode === 'truco') {
                 gameState.truco.s1 = 0;
@@ -246,24 +227,23 @@ function confirmarZerar() {
             }
             gameState.ativo = true;
             stopConfetti();
-            salvarTudo();
+            salvarEstado();
         }
     );
 }
 
 /* ================= RESET ================= */
-function resetarParaMenu() {
+function resetar() {
     gameState.ativo = false;
     stopConfetti();
     localStorage.removeItem(STORAGE_KEY);
 
-    mostrarTela('setup-screen');
-
     gameState.truco.s1 = 0;
     gameState.truco.s2 = 0;
-    gameState.truco.n1 = "";
-    gameState.truco.n2 = "";
+    gameState.truco.n1 = '';
+    gameState.truco.n2 = '';
 
+    mostrarTela('setup-screen');
     renderSetupFodinha();
 }
 
@@ -274,80 +254,59 @@ function mostrarTela(id) {
 }
 
 function input(id) {
-    return document.getElementById(id)?.value.trim() || "";
+    return document.getElementById(id)?.value.trim() || '';
 }
 
-/* ================= STORAGE ================= */
-function salvarTudo() {
+function salvarEstado() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
 }
 
 function carregarEstado() {
     const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (!s) return;
-
-    gameState = { ...gameState, ...s };
-
-    document.getElementById('input-time1').value = gameState.truco.n1 || "";
-    document.getElementById('input-time2').value = gameState.truco.n2 || "";
-
-    if (gameState.ativo) {
-        if (gameState.mode === 'truco') {
-            mostrarTela('game-screen-truco');
-            atualizarTelaTruco();
-            setupTouchHandlers();
-        } else {
-            mostrarTela('game-screen-fodinha');
-            renderGameFodinha();
-        }
-    }
+    gameState = s;
 }
 
 /* ================= CONFETTI ================= */
-let confettiCtx, confettiActive = false, particles = [], anim;
+let confettiCtx, anim, ativo = false;
 
 function startConfetti() {
-    const canvas = document.getElementById('confetti-canvas');
-    if (!canvas || confettiActive) return;
+    const c = document.getElementById('confetti-canvas');
+    if (!c || ativo) return;
 
-    canvas.style.display = 'block';
-    canvas.width = innerWidth;
-    canvas.height = innerHeight;
+    ativo = true;
+    c.style.display = 'block';
+    c.width = innerWidth;
+    c.height = innerHeight;
+    confettiCtx = c.getContext('2d');
 
-    confettiCtx = canvas.getContext('2d');
-    confettiActive = true;
-    particles = [];
+    const parts = Array.from({ length: 120 }, () => ({
+        x: Math.random() * c.width,
+        y: Math.random() * -c.height,
+        s: Math.random() * 6 + 4,
+        v: Math.random() * 6 + 3
+    }));
 
-    for (let i = 0; i < 150; i++) {
-        particles.push({
-            x: Math.random() * canvas.width,
-            y: Math.random() * canvas.height - canvas.height,
-            size: Math.random() * 8 + 4,
-            speed: Math.random() * 6 + 3
+    function loop() {
+        if (!ativo) return;
+        confettiCtx.clearRect(0, 0, c.width, c.height);
+        parts.forEach(p => {
+            p.y += p.v;
+            if (p.y > c.height) p.y = -20;
+            confettiCtx.fillStyle = '#fff';
+            confettiCtx.fillRect(p.x, p.y, p.s, p.s);
         });
+        anim = requestAnimationFrame(loop);
     }
-
-    animateConfetti();
-}
-
-function animateConfetti() {
-    if (!confettiActive) return;
-
-    confettiCtx.clearRect(0, 0, innerWidth, innerHeight);
-    particles.forEach(p => {
-        p.y += p.speed;
-        if (p.y > innerHeight) p.y = -20;
-        confettiCtx.fillStyle = '#fff';
-        confettiCtx.fillRect(p.x, p.y, p.size, p.size);
-    });
-
-    anim = requestAnimationFrame(animateConfetti);
+    loop();
 }
 
 function stopConfetti() {
-    const canvas = document.getElementById('confetti-canvas');
-    confettiActive = false;
-    if (anim) cancelAnimationFrame(anim);
-    if (confettiCtx) confettiCtx.clearRect(0, 0, canvas.width, canvas.height);
-    if (canvas) canvas.style.display = 'none';
+    ativo = false;
+    cancelAnimationFrame(anim);
+    const c = document.getElementById('confetti-canvas');
+    if (c) {
+        confettiCtx.clearRect(0, 0, c.width, c.height);
+        c.style.display = 'none';
+    }
 }
