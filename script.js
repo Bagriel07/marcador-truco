@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'marcador_truco_fodinha_v2'; // Mudei a key para evitar conflito com dados antigos bugados
+const STORAGE_KEY = 'marcador_truco_final_v4'; // Key nova para limpar cache bugado
 
 /* ================= ESTADO GLOBAL ================= */
 let gameState = {
@@ -20,7 +20,6 @@ let gameState = {
     }
 };
 
-// Variáveis de controle de gestos
 let touchStartY = 0;
 let isSwiping = false;
 
@@ -28,10 +27,10 @@ let isSwiping = false;
 window.addEventListener('DOMContentLoaded', () => {
     carregarEstado();
     
-    // Configura botões do modal
-    document.getElementById('modal-btn-cancel').onclick = fecharModal;
+    // Configura modal
+    const btnCancel = document.getElementById('modal-btn-cancel');
+    if(btnCancel) btnCancel.onclick = fecharModal;
     
-    // Inicializa a UI correta baseada no estado salvo
     if (gameState.ativo) {
         if (gameState.mode === 'truco') {
             mostrarTela('game-screen-truco');
@@ -45,29 +44,41 @@ window.addEventListener('DOMContentLoaded', () => {
         mostrarTela('setup-screen');
         renderSetupFodinha();
         
-        // Restaura a aba ativa no setup
+        // Sincroniza visualmente as abas
         const btnMode = document.querySelector(`.mode-selector button[onclick*="'${gameState.mode}'"]`);
         if(btnMode) mudarModo(gameState.mode, btnMode);
+
+        // Sincroniza visualmente os pontos do truco
+        if(gameState.mode === 'truco') {
+             const botoesPonto = document.querySelectorAll('#setup-truco .segment-opt');
+             botoesPonto.forEach(btn => {
+                 if(parseInt(btn.innerText) === gameState.truco.max) {
+                     selPonto(gameState.truco.max, btn);
+                 }
+             });
+        }
     }
 });
 
-/* ================= MODO & NAVEGAÇÃO ================= */
+/* ================= NAVEGAÇÃO ================= */
 function mudarModo(modo, btn) {
     gameState.mode = modo;
-    salvarEstado(); // Salva a preferência de modo
+    salvarEstado();
 
-    // UI da aba
     document.querySelectorAll('.mode-selector .segment-opt').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 
     const glider = document.getElementById('mode-glider');
     const buttons = [...btn.parentNode.querySelectorAll('button')];
-    // Calcula a posição do glider (0% ou 100%)
-    glider.style.transform = `translateX(${buttons.indexOf(btn) * 100}%)`;
+    if(glider && buttons.length > 0) {
+        glider.style.transform = `translateX(${buttons.indexOf(btn) * 100}%)`;
+    }
 
-    // Alterna visibilidade dos setups
-    document.getElementById('setup-truco').classList.toggle('hidden', modo !== 'truco');
-    document.getElementById('setup-fodinha').classList.toggle('hidden', modo !== 'fodinha');
+    const setupTruco = document.getElementById('setup-truco');
+    const setupFodinha = document.getElementById('setup-fodinha');
+    
+    if(setupTruco) setupTruco.classList.toggle('hidden', modo !== 'truco');
+    if(setupFodinha) setupFodinha.classList.toggle('hidden', modo !== 'fodinha');
 }
 
 function mostrarTela(id) {
@@ -76,7 +87,7 @@ function mostrarTela(id) {
     if(tela) tela.classList.remove('hidden');
 }
 
-/* ================= SETUP TRUCO ================= */
+/* ================= SETUP ================= */
 function selPonto(valor, btn) {
     gameState.truco.max = valor;
     
@@ -85,18 +96,19 @@ function selPonto(valor, btn) {
     btn.classList.add('active');
 
     const index = [...container.querySelectorAll('button')].indexOf(btn);
-    container.querySelector('.segment-glider').style.transform = `translateX(${index * 100}%)`;
+    const glider = container.querySelector('.segment-glider');
+    if(glider) glider.style.transform = `translateX(${index * 100}%)`;
 }
 
-/* ================= SETUP FODINHA ================= */
 function renderSetupFodinha() {
     const container = document.getElementById('players-container');
+    if(!container) return;
+    
     container.innerHTML = '';
 
     gameState.fodinha.players.forEach((p, i) => {
         const div = document.createElement('div');
         div.className = 'player-input-card';
-        // HTML seguro para evitar injeção, embora local
         div.innerHTML = `
             <div style="margin-right:10px; font-weight:bold; color:#666;">${i + 1}</div>
             <input type="text" value="${p.name}" placeholder="Nome do Jogador"
@@ -109,8 +121,8 @@ function renderSetupFodinha() {
     });
 }
 
-function atualizarNomeFodinha(index, valor) {
-    gameState.fodinha.players[index].name = valor;
+function atualizarNomeFodinha(idx, val) {
+    gameState.fodinha.players[idx].name = val;
     salvarEstado();
 }
 
@@ -135,10 +147,14 @@ function iniciarJogo() {
         gameState.truco.n1 = inputVal('input-time1');
         gameState.truco.n2 = inputVal('input-time2');
         
-        // Garante que max esteja correto (caso o usuário não tenha clicado nos botões)
-        const maxInput = document.getElementById('input-max'); // Se houver hidden input
-        // (No seu HTML atual não tem input-max atualizando, então confiamos no gameState)
-        
+        // CORREÇÃO CRÍTICA: Lê o botão que está visualmente ativo agora
+        const btnAtivo = document.querySelector('#setup-truco .segmented-control .segment-opt.active');
+        if (btnAtivo) {
+            gameState.truco.max = parseInt(btnAtivo.innerText) || 12;
+        } else {
+            gameState.truco.max = 12; // Fallback seguro
+        }
+
         atualizarTelaTruco();
         mostrarTela('game-screen-truco');
         setupGestos();
@@ -152,8 +168,7 @@ function iniciarJogo() {
     salvarEstado();
 }
 
-/* ================= LÓGICA TRUCO ================= */
-// Esta função faltava no código original e era chamada pelo HTML
+/* ================= TRUCO ================= */
 function mudarPontos(time, delta) {
     alterarPonto(time, delta);
 }
@@ -167,109 +182,101 @@ function criarGesto(id, time) {
     const el = document.getElementById(id);
     if (!el) return;
 
-    // Reseta handlers antigos para evitar acumulação
-    el.ontouchstart = null;
-    el.ontouchend = null;
+    el.ontouchstart = null; 
+    el.ontouchend = null; 
     el.ontouchmove = null;
 
     el.addEventListener('touchstart', e => {
         touchStartY = e.touches[0].clientY;
-        isSwiping = false; // Reseta flag
+        isSwiping = false;
     }, { passive: true });
 
     el.addEventListener('touchmove', e => {
-        // Se mover muito, marca como swipe para cancelar o click
-        if (Math.abs(e.touches[0].clientY - touchStartY) > 10) {
-            isSwiping = true;
-        }
+        if (Math.abs(e.touches[0].clientY - touchStartY) > 10) isSwiping = true;
     }, { passive: true });
 
     el.addEventListener('touchend', e => {
-        const touchEndY = e.changedTouches[0].clientY;
-        const dy = touchEndY - touchStartY;
-
-        // Se o movimento vertical for significativo (> 60px)
+        const dy = e.changedTouches[0].clientY - touchStartY;
         if (Math.abs(dy) > 60) {
-            isSwiping = true; // Garante que o click não dispare
-            // Swipe CIMA (negativo) = +1 ponto
-            // Swipe BAIXO (positivo) = -1 ponto
-            const delta = dy < 0 ? 1 : -1;
-            alterarPonto(time, delta);
+            isSwiping = true;
+            alterarPonto(time, dy < 0 ? 1 : -1);
         }
     });
 }
 
 function pontuarTap(time) {
-    // Só pontua se NÃO foi um gesto de arrastar (swipe)
-    // Adiciona um pequeno delay para garantir que a flag isSwiping foi processada
     setTimeout(() => {
-        if (!isSwiping) {
-            alterarPonto(time, 1);
-        }
-        isSwiping = false; // Reseta para o próximo toque
+        if (!isSwiping) alterarPonto(time, 1);
+        isSwiping = false;
     }, 50);
 }
 
 function alterarPonto(time, delta) {
     if (!gameState.ativo) return;
-
     const t = gameState.truco;
     
-    // Atualiza lógica
-    if (time === 1) t.s1 += delta;
-    else t.s2 += delta;
-
-    // Limites (0 até Max)
+    if (time === 1) t.s1 += delta; else t.s2 += delta;
+    
+    // Proteção de limites
     t.s1 = Math.max(0, Math.min(t.max, t.s1));
     t.s2 = Math.max(0, Math.min(t.max, t.s2));
 
     atualizarTelaTruco();
     salvarEstado();
 
-    // Vitória
     if (t.s1 === t.max || t.s2 === t.max) {
         startConfetti();
-        // Opcional: vibrar celular
         if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
     } else {
-        stopConfetti(); // Para confete se baixar pontos
+        stopConfetti();
     }
 }
 
 function atualizarTelaTruco() {
-    const elS1 = document.getElementById('score-time1');
-    const elS2 = document.getElementById('score-time2');
+    const s1 = document.getElementById('score-time1');
+    const s2 = document.getElementById('score-time2');
     
-    elS1.innerText = gameState.truco.s1;
-    elS2.innerText = gameState.truco.s2;
+    if(s1) s1.innerText = gameState.truco.s1;
+    if(s2) s2.innerText = gameState.truco.s2;
     
-    document.getElementById('nome-time1').innerText = gameState.truco.n1 || 'NÓS';
-    document.getElementById('nome-time2').innerText = gameState.truco.n2 || 'ELES';
-    document.getElementById('display-meta').innerText = gameState.truco.max;
+    const n1 = document.getElementById('nome-time1');
+    const n2 = document.getElementById('nome-time2');
+    if(n1) n1.innerText = gameState.truco.n1 || 'NÓS';
+    if(n2) n2.innerText = gameState.truco.n2 || 'ELES';
+    
+    const meta = document.getElementById('display-meta');
+    if(meta) meta.innerText = gameState.truco.max;
 
-    // Efeitos visuais de vitória
-    const card1 = document.getElementById('card-time1');
-    const card2 = document.getElementById('card-time2');
-    
-    card1.classList.toggle('winning', gameState.truco.s1 === gameState.truco.max);
-    card2.classList.toggle('winning', gameState.truco.s2 === gameState.truco.max);
+    const c1 = document.getElementById('card-time1');
+    const c2 = document.getElementById('card-time2');
+    if(c1) c1.classList.toggle('winning', gameState.truco.s1 === gameState.truco.max);
+    if(c2) c2.classList.toggle('winning', gameState.truco.s2 === gameState.truco.max);
 }
 
-/* ================= LÓGICA FODINHA ================= */
+/* ================= FODINHA (COM COROA) ================= */
 function renderGameFodinha() {
     const grid = document.getElementById('fodinha-game-grid');
+    if(!grid) return;
     grid.innerHTML = '';
 
-    document.getElementById('display-fodinha-max').innerText = gameState.fodinha.maxVidas;
+    const displayMax = document.getElementById('display-fodinha-max');
+    if(displayMax) displayMax.innerText = gameState.fodinha.maxVidas;
+
+    // Lógica da Coroa: Apenas 1 jogador vivo
+    const vivos = gameState.fodinha.players.filter(p => p.score < gameState.fodinha.maxVidas);
+    const temVencedor = vivos.length === 1 && gameState.fodinha.players.length > 1;
 
     gameState.fodinha.players.forEach((p, i) => {
         const eliminado = p.score >= gameState.fodinha.maxVidas;
+        // Se há um vencedor, e este jogador NÃO está eliminado, ele é o rei
+        const ehRei = temVencedor && !eliminado;
         
         const card = document.createElement('div');
-        card.className = `fodinha-card ${eliminado ? 'eliminated' : ''}`;
+        // Aplica a classe 'winner' se for o rei
+        card.className = `fodinha-card ${eliminado ? 'eliminated' : ''} ${ehRei ? 'winner' : ''}`;
         
         card.innerHTML = `
-            <div class="fodinha-name">${p.name || `Jogador ${i + 1}`}</div>
+            <div class="fodinha-name">${p.name || `P${i + 1}`}</div>
             <div class="fodinha-score">${p.score}</div>
             <div class="fodinha-controls">
                 <button class="btn-fodinha-ctrl" onclick="alterarVida(${i},-1)">−</button>
@@ -278,83 +285,62 @@ function renderGameFodinha() {
         `;
         grid.appendChild(card);
     });
-    
-    // Verifica se só sobrou um (Vitória) - Lógica opcional
-    const vivos = gameState.fodinha.players.filter(p => p.score < gameState.fodinha.maxVidas);
-    if (vivos.length === 1 && gameState.fodinha.players.length > 1) {
-         // Opcional: destacar o vencedor
-    }
+
+    if (temVencedor) startConfetti();
+    else stopConfetti();
 }
 
 function alterarVida(index, delta) {
     const p = gameState.fodinha.players[index];
     const max = gameState.fodinha.maxVidas;
 
-    // Se já morreu, não mexe mais (ou permite corrigir se for subtração)
     if (p.score >= max && delta > 0) return;
 
     p.score += delta;
-    if (p.score < 0) p.score = 0; // Não permite vida negativa
+    if (p.score < 0) p.score = 0;
 
     salvarEstado();
     renderGameFodinha();
-
-    // Se alguém foi eliminado agora
-    if (p.score >= max && delta > 0) {
-        if (navigator.vibrate) navigator.vibrate(200);
-    }
 }
 
-/* ================= MODAIS (FALTAVA ISSO) ================= */
-let acaoConfirmacao = null;
-
-function abrirModal(titulo, mensagem, textoBotaoConfirmar, callbackAcao) {
-    document.getElementById('modal-title').innerText = titulo;
-    document.getElementById('modal-msg').innerText = mensagem;
+/* ================= MODAL & UTIL ================= */
+function abrirModal(titulo, mensagem, btnTxt, callback) {
+    const titEl = document.getElementById('modal-title');
+    const msgEl = document.getElementById('modal-msg');
+    if(titEl) titEl.innerText = titulo;
+    if(msgEl) msgEl.innerText = mensagem;
     
     const btnConfirm = document.getElementById('modal-btn-confirm');
-    btnConfirm.innerText = textoBotaoConfirmar;
-    
-    // Remove listener antigo e adiciona novo
-    const novoBtn = btnConfirm.cloneNode(true);
-    btnConfirm.parentNode.replaceChild(novoBtn, btnConfirm);
-    
-    novoBtn.onclick = () => {
-        if (callbackAcao) callbackAcao();
-        fecharModal();
-    };
+    if(btnConfirm) {
+        btnConfirm.innerText = btnTxt;
+        const novoBtn = btnConfirm.cloneNode(true);
+        btnConfirm.parentNode.replaceChild(novoBtn, btnConfirm);
+        novoBtn.onclick = () => { if (callback) callback(); fecharModal(); };
+    }
 
     const modal = document.getElementById('custom-modal');
-    modal.classList.remove('hidden');
-    // Pequeno delay para animação CSS se houver opacity transition
-    setTimeout(() => modal.style.opacity = '1', 10);
+    if(modal) {
+        modal.classList.remove('hidden');
+        setTimeout(() => modal.style.opacity = '1', 10);
+    }
 }
 
 function fecharModal() {
     const modal = document.getElementById('custom-modal');
-    modal.style.opacity = '0';
-    setTimeout(() => modal.classList.add('hidden'), 300);
+    if(modal) {
+        modal.style.opacity = '0';
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    }
 }
 
 function confirmarSaida() {
-    abrirModal(
-        'Sair da partida',
-        'O progresso atual será perdido e voltaremos ao menu.',
-        'Sair',
-        resetarTudo
-    );
+    abrirModal('Sair da partida', 'O jogo será encerrado.', 'Sair', resetarTudo);
 }
 
 function confirmarZerar() {
-    abrirModal(
-        'Zerar placar',
-        'Tem certeza que deseja zerar os pontos desta partida?',
-        'Zerar',
-        zerarPontuacaoAtual
-    );
+    abrirModal('Zerar pontos', 'Deseja reiniciar a contagem?', 'Zerar', zerarPontuacaoAtual);
 }
 
-/* ================= RESET & UTIL ================= */
 function zerarPontuacaoAtual() {
     if (gameState.mode === 'truco') {
         gameState.truco.s1 = 0;
@@ -365,19 +351,15 @@ function zerarPontuacaoAtual() {
         renderGameFodinha();
     }
     stopConfetti();
-    gameState.ativo = true; // Mantém ativo
     salvarEstado();
 }
 
 function resetarTudo() {
     gameState.ativo = false;
     stopConfetti();
-    
-    // Reseta pontos mas mantém nomes
     gameState.truco.s1 = 0;
     gameState.truco.s2 = 0;
     gameState.fodinha.players.forEach(p => p.score = 0);
-
     mostrarTela('setup-screen');
     renderSetupFodinha();
     salvarEstado();
@@ -388,79 +370,51 @@ function inputVal(id) {
     return el ? el.value.trim() : '';
 }
 
-/* ================= STORAGE ================= */
 function salvarEstado() {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
-    } catch (e) {
-        console.error('Erro ao salvar:', e);
-    }
+    } catch(e) {}
 }
 
 function carregarEstado() {
     try {
-        const salvo = localStorage.getItem(STORAGE_KEY);
-        if (salvo) {
-            const parsed = JSON.parse(salvo);
-            // Merge simples para garantir que a estrutura nova não quebre com dados velhos
-            if (parsed && parsed.truco && parsed.fodinha) {
-                gameState = { ...gameState, ...parsed };
-            }
-        }
-    } catch (e) {
-        console.warn('Estado inválido, resetando.');
-        localStorage.removeItem(STORAGE_KEY);
-    }
+        const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (s) gameState = { ...gameState, ...s };
+    } catch (e) { localStorage.removeItem(STORAGE_KEY); }
 }
 
-/* ================= CONFETTI (EFEITOS) ================= */
+/* ================= EFEITOS ================= */
 let confettiCtx, confettiAnim, confettiAtivo = false;
 
 function startConfetti() {
-    const canvas = document.getElementById('confetti-canvas');
-    if (!canvas || confettiAtivo) return;
-
-    confettiAtivo = true;
-    canvas.style.display = 'block';
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    confettiCtx = canvas.getContext('2d');
-
-    const particles = Array.from({ length: 100 }, () => ({
-        x: Math.random() * canvas.width,
-        y: Math.random() * -canvas.height,
-        color: ['#ff0', '#f00', '#0f0', '#00f', '#fff'][Math.floor(Math.random() * 5)],
-        size: Math.random() * 5 + 5,
-        speed: Math.random() * 5 + 2,
-        wobble: Math.random() * 10
+    const c = document.getElementById('confetti-canvas');
+    if (!c || confettiAtivo) return;
+    confettiAtivo = true; c.style.display = 'block';
+    c.width = window.innerWidth; c.height = window.innerHeight;
+    confettiCtx = c.getContext('2d');
+    
+    const p = Array.from({length:100}, () => ({
+        x: Math.random()*c.width, y: Math.random()*-c.height,
+        color: ['#ff0','#f00','#0f0','#00f','#fff'][Math.floor(Math.random()*5)],
+        s: Math.random()*5+5, v: Math.random()*5+2, w: Math.random()*10
     }));
 
     function loop() {
         if (!confettiAtivo) return;
-        confettiCtx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        particles.forEach(p => {
-            p.y += p.speed;
-            p.wobble += 0.1;
-            const xOffset = Math.sin(p.wobble) * 2;
-            
-            confettiCtx.fillStyle = p.color;
-            confettiCtx.fillRect(p.x + xOffset, p.y, p.size, p.size);
-
-            if (p.y > canvas.height) p.y = -20;
+        confettiCtx.clearRect(0,0,c.width,c.height);
+        p.forEach(k => {
+            k.y += k.v; k.w += 0.1;
+            confettiCtx.fillStyle = k.color;
+            confettiCtx.fillRect(k.x + Math.sin(k.w)*2, k.y, k.s, k.s);
+            if(k.y > c.height) k.y = -20;
         });
-
         confettiAnim = requestAnimationFrame(loop);
     }
     loop();
 }
 
 function stopConfetti() {
-    confettiAtivo = false;
-    cancelAnimationFrame(confettiAnim);
-    const canvas = document.getElementById('confetti-canvas');
-    if (canvas) {
-        if(confettiCtx) confettiCtx.clearRect(0, 0, canvas.width, canvas.height);
-        canvas.style.display = 'none';
-    }
+    confettiAtivo = false; cancelAnimationFrame(confettiAnim);
+    const c = document.getElementById('confetti-canvas');
+    if(c) { c.style.display = 'none'; if(confettiCtx) confettiCtx.clearRect(0,0,c.width,c.height); }
 }
