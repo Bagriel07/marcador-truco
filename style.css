@@ -60,8 +60,7 @@ body {
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
-/* Nota: Removi padding geral das telas de jogo para controlar bordas individualmente */
-#game-screen-truco, #game-screen-fodinha {
+#game-screen-truco, #game-screen-fodinha, #history-screen {
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
 }
@@ -121,7 +120,7 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    justify-content: center; /* Centraliza verticalmente */
+    justify-content: center;
     gap: 15px;
     padding-bottom: 20px;
 }
@@ -165,7 +164,6 @@ body {
 
 /* --- COMPONENTES VISUAIS --- */
 
-/* Cartões Genéricos */
 .glass-card { 
     background: var(--card-bg); 
     border: 1px solid var(--card-border); 
@@ -174,7 +172,6 @@ body {
     overflow: hidden; flex-shrink: 0;
 }
 
-/* Inputs Gerais */
 .input-group input { width: 100%; background: transparent; border: none; color: var(--text-main); padding: 18px; font-size: 1rem; outline: none; text-align: center; }
 .input-group input::placeholder { color: var(--text-dim); }
 .separator { height: 1px; background: var(--card-border); margin: 0 15px; }
@@ -183,7 +180,7 @@ body {
 .mt-3 { margin-top: 10px; } 
 .mb-3 { margin-bottom: 10px; }
 
-/* === Pílula de Limite de Vidas === */
+/* Pílula de Limite de Vidas */
 .life-limit-pill {
     background: var(--card-bg);
     border: 1px solid var(--card-border);
@@ -304,7 +301,6 @@ body {
 
 /* --- TELA DE JOGO (Comum) --- */
 .game-layout { 
-    /* Padding lateral removido para permitir controle individual */
     padding: 10px 0 0 0; 
     overflow: hidden; 
     display: flex; flex-direction: column; 
@@ -319,7 +315,7 @@ body {
     flex-shrink: 0; 
     gap: 10px; 
     margin-bottom: 10px; 
-    padding: 0 25px; /* Adicionado padding lateral na barra superior */
+    padding: 0 25px;
 }
 
 .icon-btn { 
@@ -337,7 +333,7 @@ body {
     gap: 15px; 
     width: 100%; 
     min-height: 0; 
-    padding: 0 25px 20px 25px; /* Padding ajustado para Truco */
+    padding: 0 25px 20px 25px;
 }
 
 .score-card {
@@ -359,18 +355,17 @@ body {
 .ctrl-minus { font-size: 2.2rem; line-height: 0; padding-bottom: 4px; color: var(--text-dim); }
 .ctrl-flor { font-size: 1.6rem; background: #2a2a2a; color: #fff; }
 
-/* --- GAME FODINHA (CORRIGIDO) --- */
+/* --- GAME FODINHA --- */
 .fodinha-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* Min ligeiramente menor para encaixe melhor */
-    gap: 20px; /* Mais espaço entre cartas */
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 20px;
     width: 100%;
     flex: 1;
     overflow-y: auto;
-    /* AJUSTE IMPORTANTE: Padding interno para scroll limpo */
     padding: 10px 25px 40px 25px; 
     align-content: start;
-    justify-content: center; /* Centraliza as cartas se não preencher a linha */
+    justify-content: center;
 }
 
 .fodinha-card {
@@ -405,7 +400,7 @@ body {
     text-decoration: line-through;
 }
 
-/* === VENCEDOR FODINHA (COROA) === */
+/* VENCEDOR FODINHA */
 .fodinha-card.winner {
     border: 2px solid #ffd700;
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.25);
@@ -477,9 +472,90 @@ body {
 .modal-btn.secondary { background: #333; color: var(--text-main); }
 #confetti-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1500; }
 
+/* =========================================
+   ESTILOS DA TELA DE HISTÓRICO (CORRIGIDO)
+   ========================================= */
+
+.history-list-container {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch; /* Rolagem suave iOS */
+    padding: 10px 20px 40px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+}
+
+.history-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeIn 0.3s ease;
+    
+    /* A CORREÇÃO MÁGICA PARA NÃO AMASSAR: */
+    flex-shrink: 0; 
+}
+
+/* Indicador lateral colorido */
+.history-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 6px;
+    background: #444;
+}
+.history-card.mode-truco::before { background: #3b82f6; } 
+.history-card.mode-fodinha::before { background: #f59e0b; } 
+
+.hist-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.hist-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.hist-winner {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hist-score {
+    font-size: 1.4rem;
+    font-weight: 300;
+    color: var(--primary-color);
+    font-variant-numeric: tabular-nums;
+}
+
+.hist-details {
+    font-size: 0.9rem;
+    color: #888;
+    margin-top: 5px;
+}
+
+.crown-icon { font-size: 1.2rem; filter: drop-shadow(0 0 5px rgba(255,215,0,0.5)); }
 
 /* =========================================
-   ESTILOS DA PÁGINA DE REGRAS
+   ESTILOS DA PÁGINA DE REGRAS (RESTAURADO)
    ========================================= */
 
 .rules-screen { display: flex; flex-direction: column; overflow: hidden; }

@@ -1,9 +1,11 @@
 const STORAGE_KEY = 'marcador_truco_v_final_fixed_ui';
+const HIST_KEY = 'marcador_historico_data';
 
 /* ================= ESTADO GLOBAL ================= */
 let gameState = {
     mode: 'truco', // 'truco' ou 'fodinha'
     ativo: false,
+    matchSaved: false, // Flag para evitar salvar a mesma partida múltiplas vezes
     truco: {
         n1: '',
         n2: '',
@@ -48,7 +50,7 @@ window.addEventListener('DOMContentLoaded', () => {
         mostrarTela('setup-screen');
         renderSetupFodinha();
         
-        // CORREÇÃO CRÍTICA: Força a UI a obedecer o estado salvo ao carregar
+        // Sincroniza a UI (botões ativos) com o estado salvo
         sincronizarInterfaceComEstado();
     }
 });
@@ -176,11 +178,10 @@ function removerJogador(i) {
     salvarEstado();
 }
 
-/* ================= INICIAR JOGO (CORREÇÃO AQUI) ================= */
+/* ================= INICIAR JOGO ================= */
 function iniciarJogo() {
     // 1. DETECÇÃO VISUAL SEGURA
     // Verifica qual botão está visualmente com a classe 'active' para definir o modo.
-    // Isso impede que o jogo abra Fodinha se o usuário clicou em Truco.
     const botaoAtivo = document.querySelector('.mode-selector .segment-opt.active');
     if (botaoAtivo) {
         const textoBotao = botaoAtivo.innerText.toLowerCase();
@@ -192,6 +193,7 @@ function iniciarJogo() {
     }
 
     gameState.ativo = true;
+    gameState.matchSaved = false; // Reseta flag de histórico para nova partida
 
     if (gameState.mode === 'truco') {
         // Configura Truco
@@ -234,7 +236,7 @@ function criarGesto(id, time) {
     const el = document.getElementById(id);
     if (!el) return;
 
-    // Limpa eventos antigos para não duplicar
+    // Limpa eventos antigos
     el.ontouchstart = null; 
     el.ontouchend = null; 
     el.ontouchmove = null;
@@ -293,6 +295,12 @@ function alterarPonto(time, delta) {
     if (t.s1 === t.max || t.s2 === t.max) {
         startConfetti();
         if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        
+        // Registrar no Histórico
+        const nomeVencedor = t.s1 === t.max ? (t.n1 || 'NÓS') : (t.n2 || 'ELES');
+        const placarFinal = `${t.s1} x ${t.s2}`;
+        registrarVitoria(nomeVencedor, placarFinal, 'truco');
+
     } else {
         stopConfetti();
     }
@@ -348,8 +356,15 @@ function renderGameFodinha() {
         grid.appendChild(card);
     });
 
-    if (temVencedor) startConfetti();
-    else stopConfetti();
+    if (temVencedor) {
+        startConfetti();
+        // Registrar no Histórico
+        const vencedor = vivos[0];
+        const nomeVenc = vencedor.name || 'Jogador';
+        registrarVitoria(nomeVenc, 'Sobrevivente', 'fodinha');
+    } else {
+        stopConfetti();
+    }
 }
 
 function alterarVida(index, delta) {
@@ -405,6 +420,7 @@ function confirmarZerar() {
 }
 
 function zerarPontuacaoAtual() {
+    gameState.matchSaved = false; // Permite salvar novamente se zerar os pontos na mesma partida
     if (gameState.mode === 'truco') {
         gameState.truco.s1 = 0;
         gameState.truco.s2 = 0;
@@ -419,6 +435,7 @@ function zerarPontuacaoAtual() {
 
 function resetarTudo() {
     gameState.ativo = false;
+    gameState.matchSaved = false;
     stopConfetti();
     
     // Reseta pontos
@@ -429,12 +446,69 @@ function resetarTudo() {
     mostrarTela('setup-screen');
     renderSetupFodinha();
     
-    // IMPORTANTE: Sincroniza a interface novamente ao sair
-    // Isso garante que se o usuário clicar em "Truco" ou "Fodinha" agora,
-    // o estado visual estará batendo com o lógico.
     sincronizarInterfaceComEstado();
-    
     salvarEstado();
+}
+
+/* ================= HISTÓRICO (NOVO) ================= */
+
+function registrarVitoria(vencedor, placar, modo) {
+    if (gameState.matchSaved) return; // Evita duplicidade
+    
+    gameState.matchSaved = true;
+    
+    const partida = {
+        id: Date.now(),
+        data: new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute:'2-digit' }),
+        modo: modo, 
+        vencedor: vencedor,
+        placar: placar,
+        detalhes: modo === 'truco' ? `Max: ${gameState.truco.max}` : `${gameState.fodinha.players.length} Jogadores`
+    };
+
+    const historico = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+    historico.unshift(partida); // Adiciona no começo
+    localStorage.setItem(HIST_KEY, JSON.stringify(historico));
+}
+
+function abrirHistorico() {
+    const listaEl = document.getElementById('history-list');
+    const historico = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+    
+    mostrarTela('history-screen');
+    
+    if (historico.length === 0) {
+        listaEl.innerHTML = '<div style="text-align: center; color: #444; margin-top: 50px; font-weight:bold;">Nada por aqui ainda...<br>Vá jogar!</div>';
+        return;
+    }
+
+    listaEl.innerHTML = historico.map(p => `
+        <div class="history-card mode-${p.modo}">
+            <div class="hist-header">
+                <span>${p.modo.toUpperCase()}</span>
+                <span>${p.data}</span>
+            </div>
+            <div class="hist-main">
+                <div class="hist-winner">
+                    <span class="crown-icon">👑</span> ${p.vencedor}
+                </div>
+                <div class="hist-score">${p.placar}</div>
+            </div>
+            <div class="hist-details">${p.detalhes}</div>
+        </div>
+    `).join('');
+}
+
+function fecharHistorico() {
+    mostrarTela('setup-screen');
+    sincronizarInterfaceComEstado(); 
+}
+
+function limparHistorico() {
+    if(confirm('Tem certeza que quer apagar todo o histórico?')) {
+        localStorage.removeItem(HIST_KEY);
+        abrirHistorico(); 
+    }
 }
 
 /* ================= HELPERS ================= */

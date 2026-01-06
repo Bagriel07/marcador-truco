@@ -33,7 +33,6 @@
                 <div class="setup-body">
                     
                     <div id="setup-truco" class="game-setup-container">
-                        
                         <div class="center-content">
                             <div class="game-title">
                                 <h1>Truco</h1>
@@ -86,8 +85,10 @@
 
                 <div class="footer-action">
                     <button id="btn-start" class="btn-primary" onclick="iniciarJogo()">Iniciar Jogo</button>
-                    <div style="text-align: center;">
-                        <span class="link-secondary" onclick="window.location.href='regras.html'">Regras e Hierarquia</span>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button class="btn-secondary" onclick="window.location.href='regras.html'">📖 Regras</button>
+                        <button class="btn-secondary" onclick="abrirHistorico()">📜 Histórico</button>
                     </div>
                 </div>
 
@@ -132,6 +133,17 @@
             </div>
             
             <div class="fodinha-grid" id="fodinha-game-grid"></div>
+        </div>
+
+        <div id="history-screen" class="screen hidden">
+            <div class="top-bar" style="padding: 0 20px;">
+                <button class="icon-btn" onclick="fecharHistorico()">‹</button>
+                <span class="badge">HISTÓRICO</span>
+                <button class="icon-btn" style="color: #ff5555; border-color: #522;" onclick="limparHistorico()">🗑️</button>
+            </div>
+        
+            <div class="history-list-container" id="history-list">
+                </div>
         </div>
 
     </div> 
