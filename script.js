@@ -19,7 +19,8 @@ let gameState = {
             { name: '', score: 0 },
             { name: '', score: 0 }
         ]
-    }
+    },
+    log: [] // Histórico de pontos da partida atual
 };
 
 // Variáveis de controle de gestos (Swipe)
@@ -228,6 +229,12 @@ function iniciarJogo() {
 
     gameState.ativo = true;
     gameState.matchSaved = false; // Reseta flag de histórico para nova partida
+    gameState.log = []; // Reseta log
+
+    // Log inicial (0x0)
+    if (gameState.mode === 'truco') {
+        gameState.log.push({ t: Date.now(), s1: 0, s2: 0 });
+    }
 
     if (gameState.mode === 'truco') {
         // Configura Truco
@@ -492,9 +499,11 @@ function resetarTudo() {
     stopConfetti();
 
     // Reseta pontos
+    // Reseta pontos
     gameState.truco.s1 = 0;
     gameState.truco.s2 = 0;
     gameState.fodinha.players.forEach(p => p.score = 0);
+    gameState.log = [];
 
     mostrarTela('setup-screen');
     renderSetupFodinha();
@@ -533,12 +542,24 @@ function registrarVitoria(vencedor, placar, modo) {
         vencedor: vencedor,
         placar: placar,
         detalhes: modo === 'truco' ? `Max: ${gameState.truco.max}` : `${gameState.fodinha.players.length} Jogadores`,
-        jogadores: jogadores // Novo campo
+        jogadores: jogadores, // Novo campo
+        log: gameState.log || [] // Salva o histórico de pontos
     };
 
     const historico = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
     historico.unshift(partida); // Adiciona no começo
+
+    // Limita histórico a 50 partidas
+    if (historico.length > 50) historico.pop();
+
     localStorage.setItem(HIST_KEY, JSON.stringify(historico));
+
+    // Se for Truco, mostra o modal de vitória COM o gráfico logo de cara
+    if (modo === 'truco') {
+        setTimeout(() => {
+            verDetalhesPartida(partida.id); // Reusa a modal de detalhes
+        }, 1500); // Espera um pouco para ver os confetes
+    }
 }
 
 function abrirHistorico() {

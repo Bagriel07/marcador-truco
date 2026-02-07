@@ -1,270 +1,290 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Manual do Jogo</title>
-<link rel="stylesheet" href="style.css">
-<meta name="theme-color" content="#121212">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Manual do Jogo</title>
+    <link rel="stylesheet" href="style.css">
+    <meta name="theme-color" content="#121212">
 </head>
 
 <body>
-<div id="app-root">
-<div class="screen rules-screen">
+    <div id="app-root">
+        <div class="screen rules-screen">
 
-<div class="ios-navbar">
-    <button class="nav-btn" onclick="window.location.href='index.html'">
-        <span class="chevron-left">‹</span> Voltar
-    </button>
-    <span class="nav-title">Regulamento</span>
-    <div class="nav-placeholder"></div>
-</div>
+            <div class="ios-navbar">
+                <button class="nav-btn" onclick="window.location.href='index.html'">
+                    <span class="chevron-left">‹</span> Voltar
+                </button>
+                <span class="nav-title">Regulamento</span>
+                <div class="nav-placeholder"></div>
+            </div>
 
-<div style="padding: 15px 20px 0 20px; flex-shrink: 0;">
-    <div class="segmented-control mode-selector">
-        <div class="segment-glider" id="rules-glider"></div>
-        <button class="segment-opt active" onclick="mudarAba('truco', this)">Truco</button>
-        <button class="segment-opt" onclick="mudarAba('fodinha', this)">Fodinha</button>
+            <div style="padding: 15px 20px 0 20px; flex-shrink: 0;">
+                <div class="segmented-control mode-selector">
+                    <div class="segment-glider" id="rules-glider"></div>
+                    <button class="segment-opt active" onclick="mudarAba('truco', this)">Truco</button>
+                    <button class="segment-opt" onclick="mudarAba('fodinha', this)">Fodinha</button>
+                </div>
+            </div>
+
+            <div class="scroll-content">
+
+                <div id="regras-truco" class="rules-section">
+
+                    <h1 class="page-title">Truco Gaudério</h1>
+                    <p class="page-subtitle">Regras oficiais para evitar briga.</p>
+
+                    <div class="rule-box">
+                        <div class="rule-header">👑 Força das Cartas</div>
+                        <div class="rule-content">
+                            <div class="rank-table">
+                                <div class="rank-row">
+                                    <div class="card-display">1 ♠</div>
+                                    <div class="card-desc">Espadão (Macho)</div>
+                                </div>
+                                <div class="rank-row">
+                                    <div class="card-display">1 ♣</div>
+                                    <div class="card-desc">Bastão (Fêmea)</div>
+                                </div>
+                                <div class="rank-row">
+                                    <div class="card-display">7 ♠</div>
+                                    <div class="card-desc">Sete Espada</div>
+                                </div>
+                                <div class="rank-row">
+                                    <div class="card-display">7 ♦</div>
+                                    <div class="card-desc">Sete Ouro</div>
+                                </div>
+                                <div class="rank-row">
+                                    <div class="card-display">3</div>
+                                    <div class="card-desc">Todos os 3</div>
+                                </div>
+                                <div class="rank-row">
+                                    <div class="card-display">2</div>
+                                    <div class="card-desc">Todos os 2</div>
+                                </div>
+                                <div class="rank-row" style="opacity: 0.6;">
+                                    <div class="card-display">1</div>
+                                    <div class="card-desc">Copa e Ouro (Guaiacas)</div>
+                                </div>
+                                <div class="rank-row" style="opacity: 0.5;">
+                                    <div class="card-display">0</div>
+                                    <div class="card-desc">12, 11, 10, 7(♥♣), 6, 5, 4</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rule-box">
+                        <div class="rule-header">⚡ Pontos e Rodadas</div>
+                        <div class="rule-content">
+                            <p>O jogo vai até <strong>12 ou 24 pontos</strong>. Cada "Mão" tem 3 rodadas. Quem ganha 2
+                                rodadas leva.</p>
+                            <div style="margin-top: 15px;">
+                                <ul class="rule-list">
+                                    <li><strong>Mão Simples:</strong> Vale 1 ponto.</li>
+                                    <li><strong>Truco:</strong> Vale 2 pontos.</li>
+                                    <li><strong>Retruco:</strong> Vale 3 pontos.</li>
+                                    <li><strong>Vale Quatro:</strong> Vale 4 pontos (máximo).</li>
+                                </ul>
+                            </div>
+                            <div class="alert-box">
+                                <span class="alert-title">⚠️ Importante sobre o Truco</span>
+                                <ul class="alert-list">
+                                    <li>Só pode pedir Truco na sua vez.</li>
+                                    <li>Se o adversário correr, você ganha o valor atual da aposta.</li>
+                                    <li>O "Envido" deve ser cantado <strong>antes</strong> da 1ª carta tocar a mesa.
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rule-box">
+                        <div class="rule-header">🌸 Envido e Flor</div>
+                        <div class="rule-content">
+                            <p>Disputa paralela baseada na soma das cartas do mesmo naipe.</p>
+
+                            <p style="margin-top:10px; font-weight:bold; color:#fff;">Cálculo do Envido:</p>
+                            <p>Soma das duas cartas do mesmo naipe + <strong>20</strong>.</p>
+                            <p style="font-size:0.85rem; color:#888;">(Figuras 10, 11 e 12 valem 0 para soma).</p>
+
+                            <div style="background:#222; padding:10px; border-radius:8px; margin:10px 0;">
+                                Ex: 7♠ + 6♠ + 20 = <span class="highlight-val">33 pontos</span>
+                            </div>
+
+                            <p style="margin-top:15px; font-weight:bold; color:#fff;">A Flor (3 cartas mesmo naipe):</p>
+                            <ul class="rule-list">
+                                <li>Vale <strong>3 pontos</strong> diretos.</li>
+                                <li>A Flor anula qualquer pedido de Envido.</li>
+                                <li>Contra-flor: Dobra a aposta ou disputa o resto dos pontos.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="rule-box">
+                        <div class="rule-header">⚖️ Empate (Canga)</div>
+                        <div class="rule-content">
+                            <ul class="rule-list">
+                                <li><strong>1ª Rodada empata:</strong> Quem ganhar a 2ª rodada leva a mão.</li>
+                                <li><strong>2ª Rodada empata:</strong> Quem ganhou a 1ª rodada leva.</li>
+                                <li><strong>3ª Rodada empata:</strong> Quem ganhou a 1ª rodada leva.</li>
+                                <li><strong>Tudo empatado:</strong> Ninguém pontua e o baralho passa adiante (ou regra
+                                    da casa).</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="rule-box">
+                        <div class="rule-header">💀 Mão de Onze / Ferro</div>
+                        <div class="rule-content">
+                            <p>Quando uma dupla atinge <strong>11 pontos</strong> (no jogo de 12):</p>
+                            <ul class="rule-list" style="margin-top:10px;">
+                                <li>As cartas são dadas no <strong>escuro</strong> (viradas para baixo).</li>
+                                <li>Ninguém pode ver as cartas.</li>
+                                <li>Não existe pedido de Truco (já vale o jogo ou 3/4 pontos).</li>
+                                <li>Se alguém olhar as cartas, perde a partida automaticamente.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="rule-box" style="border-color: #7f1d1d;">
+                        <div class="rule-header" style="color:#f87171;">🚫 Proibições e Penalidades</div>
+                        <div class="rule-content">
+                            <ul class="alert-list">
+                                <li>Esconder carta ou jogar baralho fora (Perde 2 pontos).</li>
+                                <li>Cantar Flor sem ter (Perde 3 pontos).</li>
+                                <li>Olhar as cartas na Mão de Ferro (Perde o jogo).</li>
+                                <li>Sinais são permitidos, mas falar o nome das cartas para o parceiro é proibido.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div id="regras-fodinha" class="rules-section hidden">
+
+                    <h1 class="page-title">Fodinha</h1>
+                    <p class="page-subtitle">Previsão, sorte e maldade.</p>
+
+                    <div class="rule-box">
+                        <div class="rule-header">🎯 Como funciona</div>
+                        <div class="rule-content">
+                            <p>Todos começam com um limite de vidas (Ex: 5). O objetivo é <strong>não perder
+                                    vidas</strong>. O último sobrevivente vence.</p>
+                            <p style="margin-top:10px;">O jogo acontece em rodadas crescentes:</p>
+                            <ul class="rule-list">
+                                <li>1ª Mão: 1 carta para cada.</li>
+                                <li>2ª Mão: 2 cartas para cada.</li>
+                                <li>E assim por diante...</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="rule-box">
+                        <div class="rule-header">🗣️ Os Palpites</div>
+                        <div class="rule-content">
+                            <p>Antes de jogar as cartas, cada jogador diz quantas rodadas ("vazas") acha que vai ganhar
+                                naquela mão.</p>
+
+                            <div class="alert-box">
+                                <span class="alert-title">🚨 A Regra de Ouro (Sanduíche)</span>
+                                <p style="color:#ffcdcd; font-size:0.9rem;">
+                                    A soma dos palpites de todos os jogadores <strong>NUNCA</strong> pode ser igual ao
+                                    número total de cartas da mão.
+                                </p>
+                                <p style="margin-top:5px; color:#fff; font-size:0.85rem;">
+                                    <em>Ex: Se a mão tem 5 cartas, e a soma dos palpites anteriores deu 3, o último
+                                        jogador NÃO pode pedir 2.</em>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rule-box">
+                        <div class="rule-header">💔 Perdendo Vidas</div>
+                        <div class="rule-content">
+                            <p>No final da mão, compara-se o palpite com o resultado real.</p>
+                            <ul class="rule-list" style="margin-top:10px;">
+                                <li><strong>Acertou o palpite:</strong> Não perde nada (sai ileso).</li>
+                                <li><strong>Errou o palpite:</strong> Perde a <strong>diferença</strong> entre o que
+                                    pediu e o que fez.</li>
+                            </ul>
+                            <div style="background:#222; padding:10px; border-radius:8px; margin:10px 0;">
+                                Pediu 3 e fez 1? <span class="highlight-danger">Perde 2 vidas</span>.<br>
+                                Pediu 0 e fez 1? <span class="highlight-danger">Perde 1 vida</span>.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rule-box">
+                        <div class="rule-header">🃏 Hierarquia Simples</div>
+                        <div class="rule-content">
+                            <p>Diferente do Truco, a manilha é fixa ou não existe (depende da região), mas o padrão mais
+                                comum é:</p>
+                            <div class="rank-table">
+                                <div class="rank-row">
+                                    <div class="card-display">3</div>
+                                    <div class="card-desc highlight-val">Mais forte</div>
+                                </div>
+                                <div class="rank-row">
+                                    <div class="card-display">2</div>
+                                    <div class="card-desc">Segunda força</div>
+                                </div>
+                                <div class="rank-row">
+                                    <div class="card-display">A</div>
+                                    <div class="card-desc">Ás</div>
+                                </div>
+                                <div class="rank-row">
+                                    <div class="card-display">K..4</div>
+                                    <div class="card-desc">Ordem decrescente</div>
+                                </div>
+                            </div>
+                            <p style="font-size:0.85rem; margin-top:10px; color:#888;">* Naipes geralmente não têm valor
+                                diferente, exceto para desempate se combinado.</p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div style="height:60px"></div>
+            </div>
+        </div>
     </div>
-</div>
 
-<div class="scroll-content">
+    <script>
+        function mudarAba(aba, btn) {
+            document.querySelectorAll('.segment-opt').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
 
-    <div id="regras-truco" class="rules-section">
+            const glider = document.getElementById('rules-glider');
+            const index = [...btn.parentNode.querySelectorAll('button')].indexOf(btn);
+            glider.style.transform = `translateX(${index * 100}%)`;
 
-        <h1 class="page-title">Truco Gaudério</h1>
-        <p class="page-subtitle">Regras oficiais para evitar briga.</p>
+            document.getElementById('regras-truco').classList.toggle('hidden', aba !== 'truco');
+            document.getElementById('regras-fodinha').classList.toggle('hidden', aba !== 'fodinha');
 
-        <div class="rule-box">
-            <div class="rule-header">👑 Força das Cartas</div>
-            <div class="rule-content">
-                <div class="rank-table">
-                    <div class="rank-row">
-                        <div class="card-display">1 ♠</div>
-                        <div class="card-desc">Espadão (Macho)</div>
-                    </div>
-                    <div class="rank-row">
-                        <div class="card-display">1 ♣</div>
-                        <div class="card-desc">Bastão (Fêmea)</div>
-                    </div>
-                    <div class="rank-row">
-                        <div class="card-display">7 ♠</div>
-                        <div class="card-desc">Sete Espada</div>
-                    </div>
-                    <div class="rank-row">
-                        <div class="card-display">7 ♦</div>
-                        <div class="card-desc">Sete Ouro</div>
-                    </div>
-                    <div class="rank-row">
-                        <div class="card-display">3</div>
-                        <div class="card-desc">Todos os 3</div>
-                    </div>
-                    <div class="rank-row">
-                        <div class="card-display">2</div>
-                        <div class="card-desc">Todos os 2</div>
-                    </div>
-                    <div class="rank-row" style="opacity: 0.6;">
-                        <div class="card-display">1</div>
-                        <div class="card-desc">Copa e Ouro (Guaiacas)</div>
-                    </div>
-                    <div class="rank-row" style="opacity: 0.5;">
-                        <div class="card-display">0</div>
-                        <div class="card-desc">12, 11, 10, 7(♥♣), 6, 5, 4</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+            // Animação suave de entrada
+            const activeSection = document.getElementById(aba === 'truco' ? 'regras-truco' : 'regras-fodinha');
+            activeSection.style.opacity = '0';
+            activeSection.style.transform = 'translateY(10px)';
+            setTimeout(() => {
+                activeSection.style.transition = 'all 0.3s ease';
+                activeSection.style.opacity = '1';
+                activeSection.style.transform = 'translateY(0)';
+            }, 10);
+        }
 
-        <div class="rule-box">
-            <div class="rule-header">⚡ Pontos e Rodadas</div>
-            <div class="rule-content">
-                <p>O jogo vai até <strong>12 ou 24 pontos</strong>. Cada "Mão" tem 3 rodadas. Quem ganha 2 rodadas leva.</p>
-                <div style="margin-top: 15px;">
-                    <ul class="rule-list">
-                        <li><strong>Mão Simples:</strong> Vale 1 ponto.</li>
-                        <li><strong>Truco:</strong> Vale 2 pontos.</li>
-                        <li><strong>Retruco:</strong> Vale 3 pontos.</li>
-                        <li><strong>Vale Quatro:</strong> Vale 4 pontos (máximo).</li>
-                    </ul>
-                </div>
-                <div class="alert-box">
-                    <span class="alert-title">⚠️ Importante sobre o Truco</span>
-                    <ul class="alert-list">
-                        <li>Só pode pedir Truco na sua vez.</li>
-                        <li>Se o adversário correr, você ganha o valor atual da aposta.</li>
-                        <li>O "Envido" deve ser cantado <strong>antes</strong> da 1ª carta tocar a mesa.</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-
-        <div class="rule-box">
-            <div class="rule-header">🌸 Envido e Flor</div>
-            <div class="rule-content">
-                <p>Disputa paralela baseada na soma das cartas do mesmo naipe.</p>
-                
-                <p style="margin-top:10px; font-weight:bold; color:#fff;">Cálculo do Envido:</p>
-                <p>Soma das duas cartas do mesmo naipe + <strong>20</strong>.</p>
-                <p style="font-size:0.85rem; color:#888;">(Figuras 10, 11 e 12 valem 0 para soma).</p>
-
-                <div style="background:#222; padding:10px; border-radius:8px; margin:10px 0;">
-                    Ex: 7♠ + 6♠ + 20 = <span class="highlight-val">33 pontos</span>
-                </div>
-
-                <p style="margin-top:15px; font-weight:bold; color:#fff;">A Flor (3 cartas mesmo naipe):</p>
-                <ul class="rule-list">
-                    <li>Vale <strong>3 pontos</strong> diretos.</li>
-                    <li>A Flor anula qualquer pedido de Envido.</li>
-                    <li>Contra-flor: Dobra a aposta ou disputa o resto dos pontos.</li>
-                </ul>
-            </div>
-        </div>
-
-        <div class="rule-box">
-            <div class="rule-header">⚖️ Empate (Canga)</div>
-            <div class="rule-content">
-                <ul class="rule-list">
-                    <li><strong>1ª Rodada empata:</strong> Quem ganhar a 2ª rodada leva a mão.</li>
-                    <li><strong>2ª Rodada empata:</strong> Quem ganhou a 1ª rodada leva.</li>
-                    <li><strong>3ª Rodada empata:</strong> Quem ganhou a 1ª rodada leva.</li>
-                    <li><strong>Tudo empatado:</strong> Ninguém pontua e o baralho passa adiante (ou regra da casa).</li>
-                </ul>
-            </div>
-        </div>
-
-        <div class="rule-box">
-            <div class="rule-header">💀 Mão de Onze / Ferro</div>
-            <div class="rule-content">
-                <p>Quando uma dupla atinge <strong>11 pontos</strong> (no jogo de 12):</p>
-                <ul class="rule-list" style="margin-top:10px;">
-                    <li>As cartas são dadas no <strong>escuro</strong> (viradas para baixo).</li>
-                    <li>Ninguém pode ver as cartas.</li>
-                    <li>Não existe pedido de Truco (já vale o jogo ou 3/4 pontos).</li>
-                    <li>Se alguém olhar as cartas, perde a partida automaticamente.</li>
-                </ul>
-            </div>
-        </div>
-
-        <div class="rule-box" style="border-color: #7f1d1d;">
-            <div class="rule-header" style="color:#f87171;">🚫 Proibições e Penalidades</div>
-            <div class="rule-content">
-                <ul class="alert-list">
-                    <li>Esconder carta ou jogar baralho fora (Perde 2 pontos).</li>
-                    <li>Cantar Flor sem ter (Perde 3 pontos).</li>
-                    <li>Olhar as cartas na Mão de Ferro (Perde o jogo).</li>
-                    <li>Sinais são permitidos, mas falar o nome das cartas para o parceiro é proibido.</li>
-                </ul>
-            </div>
-        </div>
-
-    </div>
-
-    <div id="regras-fodinha" class="rules-section hidden">
-
-        <h1 class="page-title">Fodinha</h1>
-        <p class="page-subtitle">Previsão, sorte e maldade.</p>
-
-        <div class="rule-box">
-            <div class="rule-header">🎯 Como funciona</div>
-            <div class="rule-content">
-                <p>Todos começam com um limite de vidas (Ex: 5). O objetivo é <strong>não perder vidas</strong>. O último sobrevivente vence.</p>
-                <p style="margin-top:10px;">O jogo acontece em rodadas crescentes:</p>
-                <ul class="rule-list">
-                    <li>1ª Mão: 1 carta para cada.</li>
-                    <li>2ª Mão: 2 cartas para cada.</li>
-                    <li>E assim por diante...</li>
-                </ul>
-            </div>
-        </div>
-
-        <div class="rule-box">
-            <div class="rule-header">🗣️ Os Palpites</div>
-            <div class="rule-content">
-                <p>Antes de jogar as cartas, cada jogador diz quantas rodadas ("vazas") acha que vai ganhar naquela mão.</p>
-                
-                <div class="alert-box">
-                    <span class="alert-title">🚨 A Regra de Ouro (Sanduíche)</span>
-                    <p style="color:#ffcdcd; font-size:0.9rem;">
-                        A soma dos palpites de todos os jogadores <strong>NUNCA</strong> pode ser igual ao número total de cartas da mão.
-                    </p>
-                    <p style="margin-top:5px; color:#fff; font-size:0.85rem;">
-                        <em>Ex: Se a mão tem 5 cartas, e a soma dos palpites anteriores deu 3, o último jogador NÃO pode pedir 2.</em>
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <div class="rule-box">
-            <div class="rule-header">💔 Perdendo Vidas</div>
-            <div class="rule-content">
-                <p>No final da mão, compara-se o palpite com o resultado real.</p>
-                <ul class="rule-list" style="margin-top:10px;">
-                    <li><strong>Acertou o palpite:</strong> Não perde nada (sai ileso).</li>
-                    <li><strong>Errou o palpite:</strong> Perde a <strong>diferença</strong> entre o que pediu e o que fez.</li>
-                </ul>
-                <div style="background:#222; padding:10px; border-radius:8px; margin:10px 0;">
-                    Pediu 3 e fez 1? <span class="highlight-danger">Perde 2 vidas</span>.<br>
-                    Pediu 0 e fez 1? <span class="highlight-danger">Perde 1 vida</span>.
-                </div>
-            </div>
-        </div>
-
-        <div class="rule-box">
-            <div class="rule-header">🃏 Hierarquia Simples</div>
-            <div class="rule-content">
-                <p>Diferente do Truco, a manilha é fixa ou não existe (depende da região), mas o padrão mais comum é:</p>
-                <div class="rank-table">
-                    <div class="rank-row">
-                        <div class="card-display">3</div>
-                        <div class="card-desc highlight-val">Mais forte</div>
-                    </div>
-                    <div class="rank-row">
-                        <div class="card-display">2</div>
-                        <div class="card-desc">Segunda força</div>
-                    </div>
-                    <div class="rank-row">
-                        <div class="card-display">A</div>
-                        <div class="card-desc">Ás</div>
-                    </div>
-                    <div class="rank-row">
-                        <div class="card-display">K..4</div>
-                        <div class="card-desc">Ordem decrescente</div>
-                    </div>
-                </div>
-                <p style="font-size:0.85rem; margin-top:10px; color:#888;">* Naipes geralmente não têm valor diferente, exceto para desempate se combinado.</p>
-            </div>
-        </div>
-
-    </div>
-
-    <div style="height:60px"></div>
-</div>
-</div>
-</div>
-
-<script>
-function mudarAba(aba, btn) {
-    document.querySelectorAll('.segment-opt').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-
-    const glider = document.getElementById('rules-glider');
-    const index = [...btn.parentNode.querySelectorAll('button')].indexOf(btn);
-    glider.style.transform = `translateX(${index * 100}%)`;
-
-    document.getElementById('regras-truco').classList.toggle('hidden', aba !== 'truco');
-    document.getElementById('regras-fodinha').classList.toggle('hidden', aba !== 'fodinha');
-    
-    // Animação suave de entrada
-    const activeSection = document.getElementById(aba === 'truco' ? 'regras-truco' : 'regras-fodinha');
-    activeSection.style.opacity = '0';
-    activeSection.style.transform = 'translateY(10px)';
-    setTimeout(() => {
-        activeSection.style.transition = 'all 0.3s ease';
-        activeSection.style.opacity = '1';
-        activeSection.style.transform = 'translateY(0)';
-    }, 10);
-}
-</script>
+        // Trigger entrance animation
+        window.addEventListener('load', () => {
+            const screen = document.querySelector('.screen');
+            if (screen) {
+                setTimeout(() => screen.classList.add('active'), 50);
+            }
+        });
+    </script>
 
 </body>
+
 </html>
