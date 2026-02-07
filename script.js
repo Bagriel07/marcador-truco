@@ -329,6 +329,10 @@ function alterarPonto(time, delta) {
     t.s1 = Math.max(0, Math.min(t.max, t.s1));
     t.s2 = Math.max(0, Math.min(t.max, t.s2));
 
+    // Log update
+    if (!gameState.log) gameState.log = [];
+    gameState.log.push({ t: Date.now(), s1: t.s1, s2: t.s2 });
+
     atualizarTelaTruco();
     salvarEstado();
 
@@ -618,11 +622,11 @@ function verDetalhesPartida(id) {
             htmlDetalhes = `
                 <div style="text-align:left; margin-top:10px;">
                     <div style="display:flex; justify-content:space-between; border-bottom:1px solid #333; padding:5px 0; margin-bottom:5px;">
-                        <span style="font-weight:bold; color: #aaa;">${partida.jogadores[0].nome}</span>
+                        <span style="font-weight:bold; color: #ffffff;">${partida.jogadores[0].nome}</span>
                         <span style="font-size:1.2em; color:#fff;">${partida.jogadores[0].pontos}</span>
                     </div>
                     <div style="display:flex; justify-content:space-between; border-bottom:1px solid #333; padding:5px 0;">
-                        <span style="font-weight:bold; color: #aaa;">${partida.jogadores[1].nome}</span>
+                        <span style="font-weight:bold; color: #6b8e23;">${partida.jogadores[1].nome}</span>
                         <span style="font-size:1.2em; color:#fff;">${partida.jogadores[1].pontos}</span>
                     </div>
                 </div>
@@ -656,12 +660,83 @@ function verDetalhesPartida(id) {
         'Fechar'
     );
 
-    // Injeta o HTML customizado na mensagem do modal para ficar mais rico
-    // Pequeno hack: substitui o texto simples pelo HTML
+    // Injeta o HTML customizado
     const msgEl = document.getElementById('modal-msg');
     if (msgEl) {
         msgEl.innerHTML = `<p style="margin-bottom:10px; color:#888;">${partida.data} - ${partida.modo.toUpperCase()}</p>` + htmlDetalhes;
+
+        // Se tiver log e for Truco, desenha o gráfico
+        if (partida.modo === 'truco' && partida.log && partida.log.length > 1) {
+            const canvasId = `graph-${partida.id}`;
+            const canvasContainer = document.createElement('div');
+            canvasContainer.style.marginTop = '20px';
+            canvasContainer.style.width = '100%';
+            canvasContainer.style.height = '150px';
+            canvasContainer.innerHTML = `<canvas id="${canvasId}" width="280" height="150"></canvas>`;
+
+            msgEl.appendChild(canvasContainer);
+
+            // Wait for render
+            requestAnimationFrame(() => {
+                const cvs = document.getElementById(canvasId);
+                if (cvs) desenharGrafico(cvs, partida.log, partida.detalhes.includes('30') ? 30 : (partida.detalhes.includes('24') ? 24 : 12));
+            });
+        }
     }
+}
+
+function desenharGrafico(canvas, log, maxPontos) {
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+    const padding = 20;
+
+    ctx.clearRect(0, 0, w, h);
+
+    // Grid
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padding, padding); ctx.lineTo(padding, h - padding); // Y axis
+    ctx.moveTo(padding, h - padding); ctx.lineTo(w - padding, h - padding); // X axis
+    ctx.stroke();
+
+    if (!log || log.length < 2) return;
+
+    const steps = log.length;
+    const xStep = (w - padding * 2) / (steps - 1);
+    const yScale = (h - padding * 2) / maxPontos;
+
+    function drawLine(key, color) {
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        log.forEach((pt, i) => {
+            const x = padding + i * xStep;
+            const val = pt[key] || 0;
+            const y = (h - padding) - (val * yScale);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // Dots
+        ctx.fillStyle = color;
+        log.forEach((pt, i) => {
+            const x = padding + i * xStep;
+            const val = pt[key] || 0;
+            const y = (h - padding) - (val * yScale);
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    }
+
+    drawLine('s1', '#ffffff'); // Time 1 (Nós - Branco)
+    drawLine('s2', '#6b8e23'); // Time 2 (Eles - Verde Musgo)
 }
 
 /* ================= HELPERS ================= */

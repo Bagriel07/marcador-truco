@@ -1,25 +1,28 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Marcador Gaudério</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#121212"> 
+    <meta name="theme-color" content="#121212">
     <link rel="apple-touch-icon" href="icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
+
 <body>
-    
+
     <canvas id="confetti-canvas"></canvas>
 
     <div id="app-root">
-        
+
         <div id="setup-screen" class="screen">
             <div class="content-wrapper">
-                
+
                 <div class="top-section">
                     <div class="glass-card">
                         <div class="segmented-control mode-selector">
@@ -31,7 +34,7 @@
                 </div>
 
                 <div class="setup-body">
-                    
+
                     <div id="setup-truco" class="game-setup-container">
                         <div class="center-content">
                             <div class="game-title">
@@ -69,15 +72,17 @@
                         <div class="fodinha-layout">
                             <div class="life-limit-pill mb-3 shrink-0">
                                 <span class="pill-label">Limite de Vidas:</span>
-                                <input type="number" id="input-vidas-max" class="pill-input" value="5" pattern="\d*" inputmode="numeric">
+                                <input type="number" id="input-vidas-max" class="pill-input" value="5" pattern="\d*"
+                                    inputmode="numeric">
                             </div>
 
                             <div class="dark-scroll-container">
                                 <div class="players-setup-list" id="players-container">
-                                    </div>
+                                </div>
                             </div>
 
-                            <button class="btn-secondary mt-2 shrink-0" onclick="addFodinhaPlayer()">+ Adicionar Jogador</button>
+                            <button class="btn-secondary mt-2 shrink-0" onclick="addFodinhaPlayer()">+ Adicionar
+                                Jogador</button>
                         </div>
                     </div>
 
@@ -85,7 +90,7 @@
 
                 <div class="footer-action">
                     <button id="btn-start" class="btn-primary" onclick="iniciarJogo()">Iniciar Jogo</button>
-                    
+
                     <div style="display: flex; gap: 10px; margin-top: 15px;">
                         <button class="btn-secondary" onclick="window.location.href='regras.html'">📖 Regras</button>
                         <button class="btn-secondary" onclick="abrirHistorico()">📜 Histórico</button>
@@ -104,22 +109,26 @@
                     <button class="icon-btn" onclick="confirmarZerar()" id="btn-reset">↺</button>
                 </div>
             </div>
-            
+
             <div class="placar-container">
                 <div class="score-card" id="card-time1" onclick="pontuarTap(1)">
                     <h2 id="nome-time1" class="team-name">NÓS</h2>
                     <div class="score-number" id="score-time1">0</div>
                     <div class="score-controls-vertical">
-                        <button class="ctrl-btn-v ctrl-minus" onclick="event.stopPropagation(); mudarPontos(1, -1)">−</button>
-                        <button class="ctrl-btn-v ctrl-flor" onclick="event.stopPropagation(); mudarPontos(1, 3)">🌸</button>
+                        <button class="ctrl-btn-v ctrl-minus"
+                            onclick="event.stopPropagation(); mudarPontos(1, -1)">−</button>
+                        <button class="ctrl-btn-v ctrl-flor"
+                            onclick="event.stopPropagation(); mudarPontos(1, 3)">🌸</button>
                     </div>
                 </div>
                 <div class="score-card" id="card-time2" onclick="pontuarTap(2)">
                     <h2 id="nome-time2" class="team-name">ELES</h2>
                     <div class="score-number" id="score-time2">0</div>
                     <div class="score-controls-vertical">
-                        <button class="ctrl-btn-v ctrl-minus" onclick="event.stopPropagation(); mudarPontos(2, -1)">−</button>
-                        <button class="ctrl-btn-v ctrl-flor" onclick="event.stopPropagation(); mudarPontos(2, 3)">🌸</button>
+                        <button class="ctrl-btn-v ctrl-minus"
+                            onclick="event.stopPropagation(); mudarPontos(2, -1)">−</button>
+                        <button class="ctrl-btn-v ctrl-flor"
+                            onclick="event.stopPropagation(); mudarPontos(2, 3)">🌸</button>
                     </div>
                 </div>
             </div>
@@ -131,7 +140,7 @@
                 <span class="badge">LIMITE: <span id="display-fodinha-max">5</span></span>
                 <button class="icon-btn" onclick="confirmarZerar()">↺</button>
             </div>
-            
+
             <div class="fodinha-grid" id="fodinha-game-grid"></div>
         </div>
 
@@ -139,14 +148,15 @@
             <div class="top-bar" style="padding: 0 20px;">
                 <button class="icon-btn" onclick="fecharHistorico()">‹</button>
                 <span class="badge">HISTÓRICO</span>
-                <button class="icon-btn" style="color: #ff5555; border-color: #522;" onclick="limparHistorico()">🗑️</button>
+                <button class="icon-btn" style="color: #ff5555; border-color: #522;"
+                    onclick="limparHistorico()">🗑️</button>
             </div>
-        
+
             <div class="history-list-container" id="history-list">
-                </div>
+            </div>
         </div>
 
-    </div> 
+    </div>
 
     <div id="custom-modal" class="modal-overlay hidden">
         <div class="modal-box glass-card">
@@ -161,4 +171,5 @@
 
     <script src="script.js"></script>
 </body>
+
 </html>
