@@ -25,16 +25,16 @@ let gameState = {
 // Variáveis de controle de gestos (Swipe)
 let touchStartY = 0;
 let isSwiping = false;
-let lastInteraction = 0; 
+let lastInteraction = 0;
 
 /* ================= INIT ================= */
 window.addEventListener('DOMContentLoaded', () => {
     carregarEstado();
-    
+
     // Configura botões de modal
     const btnCancel = document.getElementById('modal-btn-cancel');
-    if(btnCancel) btnCancel.onclick = fecharModal;
-    
+    if (btnCancel) btnCancel.onclick = fecharModal;
+
     if (gameState.ativo) {
         // Se estava jogando, restaura a tela do jogo
         if (gameState.mode === 'truco') {
@@ -49,7 +49,7 @@ window.addEventListener('DOMContentLoaded', () => {
         // Se não estava jogando, vai pro setup
         mostrarTela('setup-screen');
         renderSetupFodinha();
-        
+
         // Sincroniza a UI (botões ativos) com o estado salvo
         sincronizarInterfaceComEstado();
     }
@@ -67,8 +67,8 @@ function mudarModo(modo, btn) {
 
 // Atualiza apenas o visual do botão e do "glider"
 function atualizarVisualSeletor(btn) {
-    if(!btn) return;
-    
+    if (!btn) return;
+
     // Remove active de todos e adiciona no atual
     const container = btn.parentNode;
     container.querySelectorAll('.segment-opt').forEach(b => b.classList.remove('active'));
@@ -77,7 +77,7 @@ function atualizarVisualSeletor(btn) {
     // Move a barrinha (glider)
     const glider = document.getElementById('mode-glider');
     const buttons = [...container.querySelectorAll('button')];
-    if(glider && buttons.length > 0) {
+    if (glider && buttons.length > 0) {
         glider.style.transform = `translateX(${buttons.indexOf(btn) * 100}%)`;
     }
 }
@@ -86,68 +86,102 @@ function atualizarVisualSeletor(btn) {
 function alternarPaineisSetup(modo) {
     const setupTruco = document.getElementById('setup-truco');
     const setupFodinha = document.getElementById('setup-fodinha');
-    
-    if(setupTruco) setupTruco.classList.toggle('hidden', modo !== 'truco');
-    if(setupFodinha) setupFodinha.classList.toggle('hidden', modo !== 'fodinha');
+
+    if (setupTruco) setupTruco.classList.toggle('hidden', modo !== 'truco');
+    if (setupFodinha) setupFodinha.classList.toggle('hidden', modo !== 'fodinha');
 }
 
 // Garante que o botão visualmente ativo corresponda ao gameState.mode
 function sincronizarInterfaceComEstado() {
     // Acha o botão correspondente ao modo salvo
     const btnAlvo = document.querySelector(`.mode-selector button[onclick*="'${gameState.mode}'"]`);
-    
-    if(btnAlvo) {
+
+    if (btnAlvo) {
         atualizarVisualSeletor(btnAlvo);
         alternarPaineisSetup(gameState.mode);
     }
-    
+
     // Sincroniza visualmente os pontos do truco (12, 24, 30)
-    if(gameState.mode === 'truco') {
-         const botoesPonto = document.querySelectorAll('#setup-truco .segment-opt');
-         botoesPonto.forEach(btn => {
-             // Remove active de todos primeiro
-             btn.classList.remove('active');
-             // Adiciona active se for o valor salvo
-             if(parseInt(btn.innerText) === gameState.truco.max) {
-                 btn.classList.add('active');
-                 // Move o glider dos pontos
-                 const glider = btn.parentNode.querySelector('.segment-glider');
-                 const index = [...btn.parentNode.querySelectorAll('button')].indexOf(btn);
-                 if(glider) glider.style.transform = `translateX(${index * 100}%)`;
-             }
-         });
+    if (gameState.mode === 'truco') {
+        const botoesPonto = document.querySelectorAll('#setup-truco .segment-opt');
+        botoesPonto.forEach(btn => {
+            // Remove active de todos primeiro
+            btn.classList.remove('active');
+            // Adiciona active se for o valor salvo
+            if (parseInt(btn.innerText) === gameState.truco.max) {
+                btn.classList.add('active');
+                // Move o glider dos pontos
+                const glider = btn.parentNode.querySelector('.segment-glider');
+                const index = [...btn.parentNode.querySelectorAll('button')].indexOf(btn);
+                if (glider) glider.style.transform = `translateX(${index * 100}%)`;
+            }
+        });
     }
 }
 
 function mostrarTela(id) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-    const tela = document.getElementById(id);
-    if(tela) tela.classList.remove('hidden');
+    const screens = document.querySelectorAll('.screen');
+    const newScreen = document.getElementById(id);
+
+    // Encontra a tela ativa atual
+    let currentScreen = null;
+    screens.forEach(s => {
+        if (s.classList.contains('active')) currentScreen = s;
+    });
+
+    if (currentScreen && currentScreen.id === id) return; // Já está nela
+
+    // Preparação para entrada
+    if (newScreen) {
+        newScreen.classList.remove('hidden');
+        newScreen.classList.remove('exit');
+        // Force reflow
+        void newScreen.offsetWidth;
+        newScreen.classList.add('active');
+    }
+
+    // Saída da atual
+    if (currentScreen) {
+        currentScreen.classList.remove('active');
+        currentScreen.classList.add('exit');
+
+        // Espera a transição terminar para dar display:none
+        setTimeout(() => {
+            currentScreen.classList.add('hidden');
+            currentScreen.classList.remove('exit');
+        }, 300); // 300ms match css transition
+    } else {
+        // Se não tinha tela ativa (load inicial), garante que as outras fiquem hidden
+        screens.forEach(s => {
+            if (s !== newScreen) s.classList.add('hidden');
+        });
+    }
 }
 
 /* ================= SETUP ================= */
 function selPonto(valor, btn) {
     gameState.truco.max = valor;
-    
+
     const container = btn.parentNode;
     container.querySelectorAll('.segment-opt').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 
     const index = [...container.querySelectorAll('button')].indexOf(btn);
     const glider = container.querySelector('.segment-glider');
-    if(glider) glider.style.transform = `translateX(${index * 100}%)`;
+    if (glider) glider.style.transform = `translateX(${index * 100}%)`;
 }
 
 /* --- Setup Fodinha --- */
 function renderSetupFodinha() {
     const container = document.getElementById('players-container');
-    if(!container) return;
-    
+    if (!container) return;
+
     container.innerHTML = '';
 
     gameState.fodinha.players.forEach((p, i) => {
         const div = document.createElement('div');
-        div.className = 'player-input-card';
+        div.className = 'player-input-card anim-slide-up';
+        div.style.animationDelay = `${i * 0.05}s`; // Stagger effect
         div.innerHTML = `
             <div style="margin-right:10px; font-weight:bold; color:#666;">${i + 1}</div>
             <input type="text" value="${p.name}" placeholder="Nome"
@@ -199,7 +233,7 @@ function iniciarJogo() {
         // Configura Truco
         gameState.truco.n1 = inputVal('input-time1');
         gameState.truco.n2 = inputVal('input-time2');
-        
+
         // Pega o valor máximo dos botões de ponto
         const btnPontoAtivo = document.querySelector('#setup-truco .segmented-control .segment-opt.active');
         if (btnPontoAtivo) {
@@ -214,7 +248,7 @@ function iniciarJogo() {
         // Configura Fodinha
         const vidasInput = parseInt(inputVal('input-vidas-max'));
         gameState.fodinha.maxVidas = vidasInput && vidasInput > 0 ? vidasInput : 5;
-        
+
         renderGameFodinha();
         mostrarTela('game-screen-fodinha');
     }
@@ -237,8 +271,8 @@ function criarGesto(id, time) {
     if (!el) return;
 
     // Limpa eventos antigos
-    el.ontouchstart = null; 
-    el.ontouchend = null; 
+    el.ontouchstart = null;
+    el.ontouchend = null;
     el.ontouchmove = null;
 
     el.addEventListener('touchstart', e => {
@@ -254,12 +288,12 @@ function criarGesto(id, time) {
 
     el.addEventListener('touchend', e => {
         const dy = e.changedTouches[0].clientY - touchStartY;
-        
+
         // Swipe detectado (> 60px)
         if (Math.abs(dy) > 60) {
             isSwiping = true;
             lastInteraction = Date.now();
-            
+
             // Cima = +1, Baixo = -1
             const pontos = dy < 0 ? 1 : -1;
             alterarPonto(time, pontos);
@@ -273,7 +307,7 @@ function pontuarTap(time) {
     const agora = Date.now();
     // Evita duplo clique fantasma após swipe
     if (agora - lastInteraction < 500) return;
-    if (isSwiping) return; 
+    if (isSwiping) return;
 
     alterarPonto(time, 1);
 }
@@ -281,9 +315,9 @@ function pontuarTap(time) {
 function alterarPonto(time, delta) {
     if (!gameState.ativo) return;
     const t = gameState.truco;
-    
+
     if (time === 1) t.s1 += delta; else t.s2 += delta;
-    
+
     // Limites (0 até Max)
     t.s1 = Math.max(0, Math.min(t.max, t.s1));
     t.s2 = Math.max(0, Math.min(t.max, t.s2));
@@ -295,7 +329,7 @@ function alterarPonto(time, delta) {
     if (t.s1 === t.max || t.s2 === t.max) {
         startConfetti();
         if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-        
+
         // Registrar no Histórico
         const nomeVencedor = t.s1 === t.max ? (t.n1 || 'NÓS') : (t.n2 || 'ELES');
         const placarFinal = `${t.s1} x ${t.s2}`;
@@ -309,31 +343,32 @@ function alterarPonto(time, delta) {
 function atualizarTelaTruco() {
     const s1 = document.getElementById('score-time1');
     const s2 = document.getElementById('score-time2');
-    if(s1) s1.innerText = gameState.truco.s1;
-    if(s2) s2.innerText = gameState.truco.s2;
-    
+
+    atualizarNumeroComAnimacao(s1, gameState.truco.s1);
+    atualizarNumeroComAnimacao(s2, gameState.truco.s2);
+
     const n1 = document.getElementById('nome-time1');
     const n2 = document.getElementById('nome-time2');
-    if(n1) n1.innerText = gameState.truco.n1 || 'NÓS';
-    if(n2) n2.innerText = gameState.truco.n2 || 'ELES';
-    
+    if (n1) n1.innerText = gameState.truco.n1 || 'NÓS';
+    if (n2) n2.innerText = gameState.truco.n2 || 'ELES';
+
     const meta = document.getElementById('display-meta');
-    if(meta) meta.innerText = gameState.truco.max;
+    if (meta) meta.innerText = gameState.truco.max;
 
     const c1 = document.getElementById('card-time1');
     const c2 = document.getElementById('card-time2');
-    if(c1) c1.classList.toggle('winning', gameState.truco.s1 === gameState.truco.max);
-    if(c2) c2.classList.toggle('winning', gameState.truco.s2 === gameState.truco.max);
+    if (c1) c1.classList.toggle('winning', gameState.truco.s1 === gameState.truco.max);
+    if (c2) c2.classList.toggle('winning', gameState.truco.s2 === gameState.truco.max);
 }
 
 /* ================= LÓGICA DO FODINHA ================= */
 function renderGameFodinha() {
     const grid = document.getElementById('fodinha-game-grid');
-    if(!grid) return;
+    if (!grid) return;
     grid.innerHTML = '';
 
     const displayMax = document.getElementById('display-fodinha-max');
-    if(displayMax) displayMax.innerText = gameState.fodinha.maxVidas;
+    if (displayMax) displayMax.innerText = gameState.fodinha.maxVidas;
 
     const vivos = gameState.fodinha.players.filter(p => p.score < gameState.fodinha.maxVidas);
     const temVencedor = vivos.length === 1 && gameState.fodinha.players.length > 1;
@@ -341,10 +376,10 @@ function renderGameFodinha() {
     gameState.fodinha.players.forEach((p, i) => {
         const eliminado = p.score >= gameState.fodinha.maxVidas;
         const ehRei = temVencedor && !eliminado;
-        
+
         const card = document.createElement('div');
         card.className = `fodinha-card ${eliminado ? 'eliminated' : ''} ${ehRei ? 'winner' : ''}`;
-        
+
         card.innerHTML = `
             <div class="fodinha-name">${p.name || `P${i + 1}`}</div>
             <div class="fodinha-score">${p.score}</div>
@@ -378,18 +413,34 @@ function alterarVida(index, delta) {
     if (p.score < 0) p.score = 0;
 
     salvarEstado();
+    // Renderiza apenas se houve mudança visual significativa ou usa animação pontual
+    // Para simplificar e manter sincronia:
     renderGameFodinha();
+}
+
+function atualizarNumeroComAnimacao(el, novoValor) {
+    if (!el) return;
+    const valorAtual = parseInt(el.innerText);
+    if (valorAtual !== novoValor) {
+        el.innerText = novoValor;
+        el.classList.remove('anim-pop');
+        void el.offsetWidth; // Force reflow
+        el.classList.add('anim-pop');
+    }
 }
 
 /* ================= MODAIS E RESET ================= */
 function abrirModal(titulo, mensagem, btnTxt, callback) {
     const titEl = document.getElementById('modal-title');
     const msgEl = document.getElementById('modal-msg');
-    if(titEl) titEl.innerText = titulo;
-    if(msgEl) msgEl.innerText = mensagem;
-    
+    if (titEl) titEl.innerText = titulo;
+    if (msgEl) msgEl.innerText = mensagem;
+
+    // Reset msg content (remove custom html if any from previous calls)
+    if (msgEl && !mensagem.includes('<')) msgEl.innerHTML = mensagem.replace(/\n/g, '<br>');
+
     const btnConfirm = document.getElementById('modal-btn-confirm');
-    if(btnConfirm) {
+    if (btnConfirm) {
         btnConfirm.innerText = btnTxt;
         const novoBtn = btnConfirm.cloneNode(true);
         btnConfirm.parentNode.replaceChild(novoBtn, btnConfirm);
@@ -397,16 +448,18 @@ function abrirModal(titulo, mensagem, btnTxt, callback) {
     }
 
     const modal = document.getElementById('custom-modal');
-    if(modal) {
+    if (modal) {
         modal.classList.remove('hidden');
-        setTimeout(() => modal.style.opacity = '1', 10);
+        // Force reflow for animation
+        void modal.offsetWidth;
+        modal.classList.add('active');
     }
 }
 
 function fecharModal() {
     const modal = document.getElementById('custom-modal');
-    if(modal) {
-        modal.style.opacity = '0';
+    if (modal) {
+        modal.classList.remove('active');
         setTimeout(() => modal.classList.add('hidden'), 300);
     }
 }
@@ -437,7 +490,7 @@ function resetarTudo() {
     gameState.ativo = false;
     gameState.matchSaved = false;
     stopConfetti();
-    
+
     // Reseta pontos
     gameState.truco.s1 = 0;
     gameState.truco.s2 = 0;
@@ -445,7 +498,7 @@ function resetarTudo() {
 
     mostrarTela('setup-screen');
     renderSetupFodinha();
-    
+
     sincronizarInterfaceComEstado();
     salvarEstado();
 }
@@ -454,9 +507,9 @@ function resetarTudo() {
 
 function registrarVitoria(vencedor, placar, modo) {
     if (gameState.matchSaved) return; // Evita duplicidade
-    
+
     gameState.matchSaved = true;
-    
+
     // Captura dados dos jogadores para o histórico
     let jogadores = [];
     if (modo === 'truco') {
@@ -475,8 +528,8 @@ function registrarVitoria(vencedor, placar, modo) {
 
     const partida = {
         id: Date.now(),
-        data: new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute:'2-digit' }),
-        modo: modo, 
+        data: new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
+        modo: modo,
         vencedor: vencedor,
         placar: placar,
         detalhes: modo === 'truco' ? `Max: ${gameState.truco.max}` : `${gameState.fodinha.players.length} Jogadores`,
@@ -491,16 +544,16 @@ function registrarVitoria(vencedor, placar, modo) {
 function abrirHistorico() {
     const listaEl = document.getElementById('history-list');
     const historico = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
-    
+
     mostrarTela('history-screen');
-    
+
     if (historico.length === 0) {
         listaEl.innerHTML = '<div style="text-align: center; color: #444; margin-top: 50px; font-weight:bold;">Nada por aqui ainda...<br>Vá jogar!</div>';
         return;
     }
 
-    listaEl.innerHTML = historico.map(p => `
-        <div class="history-card mode-${p.modo}" onclick="verDetalhesPartida(${p.id})">
+    listaEl.innerHTML = historico.map((p, i) => `
+        <div class="history-card mode-${p.modo} anim-slide-up" style="animation-delay: ${i * 0.05}s;" onclick="verDetalhesPartida(${p.id})">
             <div class="hist-header">
                 <span>${p.modo.toUpperCase()}</span>
                 <span>${p.data}</span>
@@ -520,20 +573,20 @@ function abrirHistorico() {
 
 function fecharHistorico() {
     mostrarTela('setup-screen');
-    sincronizarInterfaceComEstado(); 
+    sincronizarInterfaceComEstado();
 }
 
 function limparHistorico() {
-    if(confirm('Tem certeza que quer apagar todo o histórico?')) {
+    if (confirm('Tem certeza que quer apagar todo o histórico?')) {
         localStorage.removeItem(HIST_KEY);
-        abrirHistorico(); 
+        abrirHistorico();
     }
 }
 
 function verDetalhesPartida(id) {
     const historico = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
     const partida = historico.find(p => p.id === id);
-    
+
     if (!partida) return;
 
     let htmlDetalhes = '';
@@ -541,7 +594,7 @@ function verDetalhesPartida(id) {
     if (partida.modo === 'truco') {
         // Detalhes Truco
         if (partida.jogadores && partida.jogadores.length >= 2) {
-             htmlDetalhes = `
+            htmlDetalhes = `
                 <div style="text-align:left; margin-top:10px;">
                     <div style="display:flex; justify-content:space-between; border-bottom:1px solid #333; padding:5px 0; margin-bottom:5px;">
                         <span style="font-weight:bold; color: #aaa;">${partida.jogadores[0].nome}</span>
@@ -554,8 +607,8 @@ function verDetalhesPartida(id) {
                 </div>
             `;
         } else {
-             // Fallback para histórico antigo
-             htmlDetalhes = `<p style="color:#888;">Detalhes dos jogadores não disponíveis para esta partida antiga.</p>`;
+            // Fallback para histórico antigo
+            htmlDetalhes = `<p style="color:#888;">Detalhes dos jogadores não disponíveis para esta partida antiga.</p>`;
         }
     } else {
         // Detalhes Fodinha
@@ -572,16 +625,16 @@ function verDetalhesPartida(id) {
             });
             htmlDetalhes += `</div>`;
         } else {
-             htmlDetalhes = `<p style="color:#888;">Detalhes dos jogadores não disponíveis para esta partida antiga.</p>`;
+            htmlDetalhes = `<p style="color:#888;">Detalhes dos jogadores não disponíveis para esta partida antiga.</p>`;
         }
     }
 
     abrirModal(
-        `Detalhes da Partida`, 
-        `Data: ${partida.data}\nModo: ${partida.modo.toUpperCase()}`, 
+        `Detalhes da Partida`,
+        `Data: ${partida.data}\nModo: ${partida.modo.toUpperCase()}`,
         'Fechar'
     );
-    
+
     // Injeta o HTML customizado na mensagem do modal para ficar mais rico
     // Pequeno hack: substitui o texto simples pelo HTML
     const msgEl = document.getElementById('modal-msg');
@@ -599,7 +652,7 @@ function inputVal(id) {
 function salvarEstado() {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
-    } catch(e) {}
+    } catch (e) { }
 }
 
 function carregarEstado() {
@@ -618,21 +671,21 @@ function startConfetti() {
     confettiAtivo = true; c.style.display = 'block';
     c.width = window.innerWidth; c.height = window.innerHeight;
     confettiCtx = c.getContext('2d');
-    
-    const p = Array.from({length:100}, () => ({
-        x: Math.random()*c.width, y: Math.random()*-c.height,
-        color: ['#ff0','#f00','#0f0','#00f','#fff'][Math.floor(Math.random()*5)],
-        s: Math.random()*5+5, v: Math.random()*5+2, w: Math.random()*10
+
+    const p = Array.from({ length: 100 }, () => ({
+        x: Math.random() * c.width, y: Math.random() * -c.height,
+        color: ['#ff0', '#f00', '#0f0', '#00f', '#fff'][Math.floor(Math.random() * 5)],
+        s: Math.random() * 5 + 5, v: Math.random() * 5 + 2, w: Math.random() * 10
     }));
 
     function loop() {
         if (!confettiAtivo) return;
-        confettiCtx.clearRect(0,0,c.width,c.height);
+        confettiCtx.clearRect(0, 0, c.width, c.height);
         p.forEach(k => {
             k.y += k.v; k.w += 0.1;
             confettiCtx.fillStyle = k.color;
-            confettiCtx.fillRect(k.x + Math.sin(k.w)*2, k.y, k.s, k.s);
-            if(k.y > c.height) k.y = -20;
+            confettiCtx.fillRect(k.x + Math.sin(k.w) * 2, k.y, k.s, k.s);
+            if (k.y > c.height) k.y = -20;
         });
         confettiAnim = requestAnimationFrame(loop);
     }
@@ -642,5 +695,5 @@ function startConfetti() {
 function stopConfetti() {
     confettiAtivo = false; cancelAnimationFrame(confettiAnim);
     const c = document.getElementById('confetti-canvas');
-    if(c) { c.style.display = 'none'; if(confettiCtx) confettiCtx.clearRect(0,0,c.width,c.height); }
+    if (c) { c.style.display = 'none'; if (confettiCtx) confettiCtx.clearRect(0, 0, c.width, c.height); }
 }
