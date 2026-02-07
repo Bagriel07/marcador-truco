@@ -501,6 +501,12 @@ body {
     
     /* A CORREÇÃO MÁGICA PARA NÃO AMASSAR: */
     flex-shrink: 0; 
+    cursor: pointer;
+    transition: transform 0.1s, background 0.2s;
+}
+.history-card:active {
+    transform: scale(0.98);
+    background: #252525;
 }
 
 /* Indicador lateral colorido */

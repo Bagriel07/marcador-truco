@@ -457,13 +457,30 @@ function registrarVitoria(vencedor, placar, modo) {
     
     gameState.matchSaved = true;
     
+    // Captura dados dos jogadores para o histórico
+    let jogadores = [];
+    if (modo === 'truco') {
+        jogadores = [
+            { nome: gameState.truco.n1 || 'NÓS', pontos: gameState.truco.s1 },
+            { nome: gameState.truco.n2 || 'ELES', pontos: gameState.truco.s2 }
+        ];
+    } else {
+        // No Fodinha, salva o estado final de todos os jogadores
+        jogadores = gameState.fodinha.players.map(p => ({
+            nome: p.name,
+            vidas_perdidas: p.score,
+            status: p.score >= gameState.fodinha.maxVidas ? 'eliminado' : 'vencedor'
+        }));
+    }
+
     const partida = {
         id: Date.now(),
         data: new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute:'2-digit' }),
         modo: modo, 
         vencedor: vencedor,
         placar: placar,
-        detalhes: modo === 'truco' ? `Max: ${gameState.truco.max}` : `${gameState.fodinha.players.length} Jogadores`
+        detalhes: modo === 'truco' ? `Max: ${gameState.truco.max}` : `${gameState.fodinha.players.length} Jogadores`,
+        jogadores: jogadores // Novo campo
     };
 
     const historico = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
@@ -483,7 +500,7 @@ function abrirHistorico() {
     }
 
     listaEl.innerHTML = historico.map(p => `
-        <div class="history-card mode-${p.modo}">
+        <div class="history-card mode-${p.modo}" onclick="verDetalhesPartida(${p.id})">
             <div class="hist-header">
                 <span>${p.modo.toUpperCase()}</span>
                 <span>${p.data}</span>
@@ -494,7 +511,9 @@ function abrirHistorico() {
                 </div>
                 <div class="hist-score">${p.placar}</div>
             </div>
-            <div class="hist-details">${p.detalhes}</div>
+            <div class="hist-details">
+                ${p.detalhes} <span style="float:right; font-size: 0.8em; opacity: 0.7;">ℹ️ Ver detalhes</span>
+            </div>
         </div>
     `).join('');
 }
@@ -508,6 +527,66 @@ function limparHistorico() {
     if(confirm('Tem certeza que quer apagar todo o histórico?')) {
         localStorage.removeItem(HIST_KEY);
         abrirHistorico(); 
+    }
+}
+
+function verDetalhesPartida(id) {
+    const historico = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+    const partida = historico.find(p => p.id === id);
+    
+    if (!partida) return;
+
+    let htmlDetalhes = '';
+
+    if (partida.modo === 'truco') {
+        // Detalhes Truco
+        if (partida.jogadores && partida.jogadores.length >= 2) {
+             htmlDetalhes = `
+                <div style="text-align:left; margin-top:10px;">
+                    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #333; padding:5px 0; margin-bottom:5px;">
+                        <span style="font-weight:bold; color: #aaa;">${partida.jogadores[0].nome}</span>
+                        <span style="font-size:1.2em; color:#fff;">${partida.jogadores[0].pontos}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #333; padding:5px 0;">
+                        <span style="font-weight:bold; color: #aaa;">${partida.jogadores[1].nome}</span>
+                        <span style="font-size:1.2em; color:#fff;">${partida.jogadores[1].pontos}</span>
+                    </div>
+                </div>
+            `;
+        } else {
+             // Fallback para histórico antigo
+             htmlDetalhes = `<p style="color:#888;">Detalhes dos jogadores não disponíveis para esta partida antiga.</p>`;
+        }
+    } else {
+        // Detalhes Fodinha
+        if (partida.jogadores && partida.jogadores.length > 0) {
+            htmlDetalhes = `<div style="text-align:left; margin-top:10px; max-height:200px; overflow-y:auto;">`;
+            partida.jogadores.forEach(p => {
+                const isWinner = p.status === 'vencedor';
+                htmlDetalhes += `
+                    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333; ${isWinner ? 'color:#ffd700;' : 'color:#ccc;'}">
+                        <span>${isWinner ? '👑 ' : ''}${p.nome || 'Jogador'}</span>
+                        <span>${p.vidas_perdidas} vidas perdidas</span>
+                    </div>
+                `;
+            });
+            htmlDetalhes += `</div>`;
+        } else {
+             htmlDetalhes = `<p style="color:#888;">Detalhes dos jogadores não disponíveis para esta partida antiga.</p>`;
+        }
+    }
+
+    abrirModal(
+        `Detalhes da Partida`, 
+        `Data: ${partida.data}\nModo: ${partida.modo.toUpperCase()}`, 
+        'Fechar'
+    );
+    
+    // Injeta o HTML customizado na mensagem do modal para ficar mais rico
+    // Pequeno hack: substitui o texto simples pelo HTML
+    const msgEl = document.getElementById('modal-msg');
+    if (msgEl) {
+        msgEl.innerHTML = `<p style="margin-bottom:10px; color:#888;">${partida.data} - ${partida.modo.toUpperCase()}</p>` + htmlDetalhes;
     }
 }
 
