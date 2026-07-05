@@ -69,6 +69,7 @@ function estadoPadrao() {
             n1: '',
             n2: '',
             max: 12,
+            scoreMode: 'simple',
             s1: 0,
             s2: 0,
             selectedTeam: 1,
@@ -105,6 +106,9 @@ function normalizarEstado(saved) {
     const trucoRounds = normalizarRodadasTruco(saved.truco?.rounds);
     const scoreFromRounds = calcularScoreRodadas(trucoRounds, trucoMax);
     const hasRoundEvents = trucoRounds.some(round => round.events.length > 0);
+    const savedScoreMode = ['simple', 'complete'].includes(saved.truco?.scoreMode)
+        ? saved.truco.scoreMode
+        : (hasRoundEvents ? 'complete' : 'simple');
 
     return {
         ...base,
@@ -117,6 +121,7 @@ function normalizarEstado(saved) {
             ...base.truco,
             ...(saved.truco || {}),
             max: trucoMax,
+            scoreMode: savedScoreMode,
             s1: hasRoundEvents ? scoreFromRounds.s1 : clamp(parseInt(saved.truco?.s1, 10) || 0, 0, trucoMax),
             s2: hasRoundEvents ? scoreFromRounds.s2 : clamp(parseInt(saved.truco?.s2, 10) || 0, 0, trucoMax),
             selectedTeam: saved.truco?.selectedTeam === 2 ? 2 : 1,
@@ -284,11 +289,13 @@ function sincronizarInterfaceComEstado() {
     const inputTime1 = document.getElementById('input-time1');
     const inputTime2 = document.getElementById('input-time2');
     const inputMax = document.getElementById('input-max');
+    const scoreModeInput = document.getElementById('input-truco-score-mode');
     const vidasInput = document.getElementById('input-vidas-max');
 
     if (inputTime1) inputTime1.value = gameState.truco.n1 || '';
     if (inputTime2) inputTime2.value = gameState.truco.n2 || '';
     if (inputMax) inputMax.value = gameState.truco.max;
+    if (scoreModeInput) scoreModeInput.value = gameState.truco.scoreMode || 'simple';
     if (vidasInput) vidasInput.value = gameState.fodinha.maxVidas;
 
     const pontosBtns = document.querySelectorAll('#setup-truco .points-selector .segment-opt');
@@ -297,6 +304,9 @@ function sincronizarInterfaceComEstado() {
             atualizarVisualSeletor(btn);
         }
     });
+
+    const scoreModeBtn = document.querySelector(`.truco-score-mode-selector button[onclick*="'${gameState.truco.scoreMode || 'simple'}'"]`);
+    if (scoreModeBtn) atualizarVisualSeletor(scoreModeBtn);
 }
 
 function mostrarTela(id) {
@@ -329,6 +339,17 @@ function selPonto(valor, btn) {
     gameState.truco.max = valor;
     const inputMax = document.getElementById('input-max');
     if (inputMax) inputMax.value = valor;
+    atualizarVisualSeletor(btn);
+    salvarEstado();
+}
+
+function selTrucoScoreMode(mode, btn) {
+    if (!['simple', 'complete'].includes(mode)) return;
+    gameState.truco.scoreMode = mode;
+
+    const input = document.getElementById('input-truco-score-mode');
+    if (input) input.value = mode;
+
     atualizarVisualSeletor(btn);
     salvarEstado();
 }
@@ -407,6 +428,7 @@ function iniciarJogo() {
     if (gameState.mode === 'truco') {
         gameState.truco.n1 = inputVal('input-time1');
         gameState.truco.n2 = inputVal('input-time2');
+        gameState.truco.scoreMode = inputVal('input-truco-score-mode') === 'complete' ? 'complete' : 'simple';
         gameState.truco.max = clamp(parseInt(inputVal('input-max'), 10) || gameState.truco.max || 12, 12, 30);
         if (![12, 24, 30].includes(gameState.truco.max)) gameState.truco.max = 12;
         gameState.truco.s1 = 0;
@@ -432,15 +454,21 @@ function iniciarJogo() {
 }
 
 function mudarPontos(time, delta) {
-    const preset = delta >= 0
-        ? { category: 'Ajuste', label: 'Ajuste manual', points: delta }
-        : { category: 'Ajuste', label: 'Correção manual', points: delta };
+    const isSimple = gameState.truco.scoreMode !== 'complete';
+    const preset = isSimple
+        ? {
+            category: 'Simples',
+            label: delta === 3 ? 'Três pontos' : (delta > 0 ? 'Ponto simples' : 'Correção simples'),
+            points: delta
+        }
+        : (delta >= 0
+            ? { category: 'Ajuste', label: 'Ajuste manual', points: delta }
+            : { category: 'Ajuste', label: 'Correção manual', points: delta });
     registrarEventoTrucoCustom(time, preset);
 }
 
 function pontuarTap(time) {
-    selecionarTimePontuacao(time);
-    registrarEventoTruco('ajusteMais');
+    mudarPontos(time, 1);
 }
 
 function setupGestos() {}
@@ -626,26 +654,46 @@ function obterNomeTime(time) {
 function atualizarTelaTruco() {
     atualizarNumeroComAnimacao(document.getElementById('score-time1'), gameState.truco.s1);
     atualizarNumeroComAnimacao(document.getElementById('score-time2'), gameState.truco.s2);
+    atualizarNumeroComAnimacao(document.getElementById('simple-score-time1'), gameState.truco.s1);
+    atualizarNumeroComAnimacao(document.getElementById('simple-score-time2'), gameState.truco.s2);
 
     const n1 = document.getElementById('nome-time1');
     const n2 = document.getElementById('nome-time2');
+    const simpleN1 = document.getElementById('simple-nome-time1');
+    const simpleN2 = document.getElementById('simple-nome-time2');
     const meta = document.getElementById('display-meta');
     const c1 = document.getElementById('card-time1');
     const c2 = document.getElementById('card-time2');
+    const simpleC1 = document.getElementById('simple-card-time1');
+    const simpleC2 = document.getElementById('simple-card-time2');
 
     if (n1) n1.textContent = gameState.truco.n1 || 'NÓS';
     if (n2) n2.textContent = gameState.truco.n2 || 'ELES';
+    if (simpleN1) simpleN1.textContent = gameState.truco.n1 || 'NÓS';
+    if (simpleN2) simpleN2.textContent = gameState.truco.n2 || 'ELES';
     if (meta) meta.textContent = gameState.truco.max;
     if (c1) c1.classList.toggle('winning', gameState.truco.s1 >= gameState.truco.max);
     if (c2) c2.classList.toggle('winning', gameState.truco.s2 >= gameState.truco.max);
+    if (simpleC1) simpleC1.classList.toggle('winning', gameState.truco.s1 >= gameState.truco.max);
+    if (simpleC2) simpleC2.classList.toggle('winning', gameState.truco.s2 >= gameState.truco.max);
 
     const roundDisplay = document.getElementById('display-round');
     if (roundDisplay) roundDisplay.textContent = obterMaoAtual().number;
 
+    atualizarModoTelaTruco();
     selecionarTimePontuacao(gameState.truco.selectedTeam || 1);
     renderTrucoRoundLog();
     renderTrucoSourceSummary();
     atualizarValoresAutomaticosTruco();
+}
+
+function atualizarModoTelaTruco() {
+    const simplePanel = document.getElementById('truco-simple-panel');
+    const completePanel = document.getElementById('truco-complete-panel');
+    const isComplete = gameState.truco.scoreMode === 'complete';
+
+    if (simplePanel) simplePanel.classList.toggle('hidden', isComplete);
+    if (completePanel) completePanel.classList.toggle('hidden', !isComplete);
 }
 
 function atualizarValoresAutomaticosTruco() {
@@ -717,7 +765,7 @@ function renderTrucoSourceSummary() {
 }
 
 function obterResumoTrucoPorCategoria(rounds = gameState.truco.rounds) {
-    const order = ['Envido', 'Flor', 'Truco', 'Ajuste'];
+    const order = ['Simples', 'Envido', 'Flor', 'Truco', 'Ajuste'];
     const totals = new Map(order.map(category => [category, { category, team1: 0, team2: 0 }]));
 
     (rounds || []).forEach(round => {
@@ -953,7 +1001,8 @@ function criarPartida(vencedor, placar, modo, data) {
             vencedor,
             placar,
             meta: gameState.truco.max,
-            detalhes: `Meta ${gameState.truco.max} · ${contarMaosComPontos(gameState.truco.rounds)} mãos`,
+            scoreMode: gameState.truco.scoreMode || 'simple',
+            detalhes: `${labelTrucoScoreMode(gameState.truco.scoreMode)} · Meta ${gameState.truco.max} · ${contarMaosComPontos(gameState.truco.rounds)} mãos`,
             jogadores: [
                 { nome: gameState.truco.n1 || 'NÓS', pontos: gameState.truco.s1 },
                 { nome: gameState.truco.n2 || 'ELES', pontos: gameState.truco.s2 }
@@ -1378,7 +1427,9 @@ function configurarInputsPersistentes() {
 function configurarAcessibilidadePlacar() {
     [
         ['card-time1', 1],
-        ['card-time2', 2]
+        ['card-time2', 2],
+        ['simple-card-time1', 1],
+        ['simple-card-time2', 2]
     ].forEach(([id, time]) => {
         const card = document.getElementById(id);
         if (!card || card.dataset.keyBound === '1') return;
@@ -1445,6 +1496,10 @@ function formatarData(date) {
 
 function labelModo(modo) {
     return modo === 'fodinha' ? 'Fodinha' : 'Truco';
+}
+
+function labelTrucoScoreMode(mode) {
+    return mode === 'complete' ? 'Completo' : 'Simples';
 }
 
 function obterMetaPartida(partida) {

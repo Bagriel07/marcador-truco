@@ -557,6 +557,21 @@ button,
     white-space: nowrap;
 }
 
+.simple-score-layout {
+    min-height: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.placar-container.simple {
+    padding-top: 12px;
+}
+
+.placar-container.simple .score-card {
+    min-height: 0;
+}
+
 .truco-match {
     min-height: 0;
     flex: 1;

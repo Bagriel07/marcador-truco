@@ -65,6 +65,16 @@
                             </div>
                             <input type="hidden" id="input-max" value="12">
                         </div>
+
+                        <div class="control-section">
+                            <label class="section-label">Tipo de marcador</label>
+                            <div class="segmented-control truco-score-mode-selector" aria-label="Tipo de marcador do Truco">
+                                <div class="segment-glider"></div>
+                                <button type="button" class="segment-opt active" onclick="selTrucoScoreMode('simple', this)">Simples</button>
+                                <button type="button" class="segment-opt" onclick="selTrucoScoreMode('complete', this)">Completo</button>
+                            </div>
+                            <input type="hidden" id="input-truco-score-mode" value="simple">
+                        </div>
                     </div>
 
                     <div id="setup-fodinha" class="game-setup-container hidden">
@@ -110,7 +120,35 @@
                 </div>
             </header>
 
-            <main class="truco-match">
+            <main id="truco-simple-panel" class="simple-score-layout">
+                <section class="placar-container simple">
+                    <div class="score-card" id="simple-card-time1" role="button" tabindex="0" onclick="pontuarTap(1)">
+                        <div class="score-card-head">
+                            <h2 id="simple-nome-time1" class="team-name">NÓS</h2>
+                        </div>
+                        <output class="score-number" id="simple-score-time1">0</output>
+                        <div class="score-actions">
+                            <button type="button" class="score-action" onclick="event.stopPropagation(); mudarPontos(1, -1)">−1</button>
+                            <button type="button" class="score-action primary" onclick="event.stopPropagation(); mudarPontos(1, 1)">+1</button>
+                            <button type="button" class="score-action" onclick="event.stopPropagation(); mudarPontos(1, 3)">+3</button>
+                        </div>
+                    </div>
+
+                    <div class="score-card" id="simple-card-time2" role="button" tabindex="0" onclick="pontuarTap(2)">
+                        <div class="score-card-head">
+                            <h2 id="simple-nome-time2" class="team-name">ELES</h2>
+                        </div>
+                        <output class="score-number" id="simple-score-time2">0</output>
+                        <div class="score-actions">
+                            <button type="button" class="score-action" onclick="event.stopPropagation(); mudarPontos(2, -1)">−1</button>
+                            <button type="button" class="score-action primary" onclick="event.stopPropagation(); mudarPontos(2, 1)">+1</button>
+                            <button type="button" class="score-action" onclick="event.stopPropagation(); mudarPontos(2, 3)">+3</button>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <main id="truco-complete-panel" class="truco-match hidden">
                 <section class="truco-score-panel">
                     <article class="truco-team-card" id="card-time1">
                         <span id="nome-time1" class="team-name">NÓS</span>
