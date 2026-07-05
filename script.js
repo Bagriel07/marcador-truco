@@ -1,89 +1,273 @@
 const STORAGE_KEY = 'marcador_truco_v_final_fixed_ui';
 const HIST_KEY = 'marcador_historico_data';
+const MAX_HISTORY = 50;
+const MAX_FODINHA_PLAYERS = 12;
 
-/* ================= ESTADO GLOBAL ================= */
-let gameState = {
-    mode: 'truco', // 'truco' ou 'fodinha'
-    ativo: false,
-    matchSaved: false, // Flag para evitar salvar a mesma partida múltiplas vezes
-    truco: {
-        n1: '',
-        n2: '',
-        max: 12,
-        s1: 0,
-        s2: 0
-    },
-    fodinha: {
-        maxVidas: 5,
-        players: [
-            { name: '', score: 0 },
-            { name: '', score: 0 }
-        ]
-    },
-    log: [] // Histórico de pontos da partida atual
+const TRUCO_POINT_PRESETS = {
+    envido: { category: 'Envido', label: 'Envido', points: 2 },
+    realEnvido: { category: 'Envido', label: 'Real envido', points: 3 },
+    faltaEnvido: { category: 'Envido', label: 'Falta envido', dynamic: 'falta' },
+    envidoNaoQuerido: { category: 'Envido', label: 'Envido não querido', points: 1 },
+    flor: { category: 'Flor', label: 'Flor', points: 3 },
+    contraFlor: { category: 'Flor', label: 'Contra flor', points: 6 },
+    contraFlorResto: { category: 'Flor', label: 'Contra flor ao resto', dynamic: 'falta' },
+    florNaoQuerida: { category: 'Flor', label: 'Flor não querida', points: 3 },
+    mao: { category: 'Truco', label: 'Mão', points: 1 },
+    truco: { category: 'Truco', label: 'Truco', points: 2 },
+    retruco: { category: 'Truco', label: 'Retruco', points: 3 },
+    valeQuatro: { category: 'Truco', label: 'Vale quatro', points: 4 },
+    trucoNaoQuerido: { category: 'Truco', label: 'Truco não querido', points: 1 },
+    retrucoNaoQuerido: { category: 'Truco', label: 'Retruco não querido', points: 2 },
+    valeQuatroNaoQuerido: { category: 'Truco', label: 'Vale quatro não querido', points: 3 },
+    ajusteMais: { category: 'Ajuste', label: 'Ajuste manual', points: 1 },
+    ajusteMenos: { category: 'Ajuste', label: 'Correção manual', points: -1 }
 };
 
-// Variáveis de controle de gestos (Swipe)
+let gameState = estadoPadrao();
+
 let touchStartY = 0;
 let isSwiping = false;
 let lastInteraction = 0;
+let confettiCtx = null;
+let confettiAnim = null;
+let confettiAtivo = false;
+let confettiParticles = [];
 
-/* ================= INIT ================= */
 window.addEventListener('DOMContentLoaded', () => {
     carregarEstado();
-
-    // Configura botões de modal
-    const btnCancel = document.getElementById('modal-btn-cancel');
-    if (btnCancel) btnCancel.onclick = fecharModal;
+    configurarModal();
+    configurarInputsPersistentes();
+    configurarAcessibilidadePlacar();
+    registrarServiceWorker();
 
     if (gameState.ativo) {
-        // Se estava jogando, restaura a tela do jogo
         if (gameState.mode === 'truco') {
             mostrarTela('game-screen-truco');
             atualizarTelaTruco();
-            setupGestos();
         } else {
             mostrarTela('game-screen-fodinha');
             renderGameFodinha();
         }
     } else {
-        // Se não estava jogando, vai pro setup
         mostrarTela('setup-screen');
         renderSetupFodinha();
-
-        // Sincroniza a UI (botões ativos) com o estado salvo
         sincronizarInterfaceComEstado();
     }
 });
 
-/* ================= NAVEGAÇÃO E MODOS ================= */
+window.addEventListener('resize', () => {
+    if (confettiAtivo) prepararConfettiCanvas();
+});
 
-// Função chamada ao clicar nos botões Truco/Fodinha
+function estadoPadrao() {
+    return {
+        mode: 'truco',
+        ativo: false,
+        matchSaved: false,
+        savedMatchId: null,
+        truco: {
+            n1: '',
+            n2: '',
+            max: 12,
+            s1: 0,
+            s2: 0,
+            selectedTeam: 1,
+            roundNumber: 1,
+            rounds: []
+        },
+        fodinha: {
+            maxVidas: 5,
+            players: [
+                { name: '', score: 0 },
+                { name: '', score: 0 }
+            ]
+        },
+        log: []
+    };
+}
+
+function normalizarEstado(saved) {
+    const base = estadoPadrao();
+    if (!saved || typeof saved !== 'object') return base;
+
+    const players = Array.isArray(saved.fodinha?.players)
+        ? saved.fodinha.players
+            .map(p => ({
+                name: typeof p?.name === 'string' ? p.name : '',
+                score: clamp(parseInt(p?.score, 10) || 0, 0, 99)
+            }))
+            .slice(0, MAX_FODINHA_PLAYERS)
+        : base.fodinha.players;
+
+    while (players.length < 2) players.push({ name: '', score: 0 });
+
+    const trucoMax = [12, 24, 30].includes(parseInt(saved.truco?.max, 10)) ? parseInt(saved.truco.max, 10) : 12;
+    const trucoRounds = normalizarRodadasTruco(saved.truco?.rounds);
+    const scoreFromRounds = calcularScoreRodadas(trucoRounds, trucoMax);
+    const hasRoundEvents = trucoRounds.some(round => round.events.length > 0);
+
+    return {
+        ...base,
+        ...saved,
+        mode: saved.mode === 'fodinha' ? 'fodinha' : 'truco',
+        ativo: Boolean(saved.ativo),
+        matchSaved: Boolean(saved.matchSaved),
+        savedMatchId: saved.savedMatchId || null,
+        truco: {
+            ...base.truco,
+            ...(saved.truco || {}),
+            max: trucoMax,
+            s1: hasRoundEvents ? scoreFromRounds.s1 : clamp(parseInt(saved.truco?.s1, 10) || 0, 0, trucoMax),
+            s2: hasRoundEvents ? scoreFromRounds.s2 : clamp(parseInt(saved.truco?.s2, 10) || 0, 0, trucoMax),
+            selectedTeam: saved.truco?.selectedTeam === 2 ? 2 : 1,
+            roundNumber: obterNumeroMaoAtual(trucoRounds),
+            rounds: trucoRounds
+        },
+        fodinha: {
+            ...base.fodinha,
+            ...(saved.fodinha || {}),
+            maxVidas: clamp(parseInt(saved.fodinha?.maxVidas, 10) || 5, 1, 99),
+            players
+        },
+        log: Array.isArray(saved.log) && saved.log.length > 0
+            ? saved.log
+            : reconstruirLogRodadas(trucoRounds, trucoMax)
+    };
+}
+
+function normalizarRodadasTruco(rounds) {
+    if (!Array.isArray(rounds) || rounds.length === 0) {
+        return [criarMaoTruco(1, { s1: 0, s2: 0 })];
+    }
+
+    const normalized = rounds
+        .map((round, index) => {
+            const number = parseInt(round?.number, 10) || index + 1;
+            const events = Array.isArray(round?.events)
+                ? round.events.map(event => normalizarEventoTruco(event, number)).filter(Boolean)
+                : [];
+
+            return {
+                id: round?.id || criarIdTruco(),
+                number,
+                openedAt: round?.openedAt || Date.now(),
+                start: {
+                    s1: clamp(parseInt(round?.start?.s1, 10) || 0, 0, 30),
+                    s2: clamp(parseInt(round?.start?.s2, 10) || 0, 0, 30)
+                },
+                events
+            };
+        })
+        .sort((a, b) => a.number - b.number);
+
+    return normalized.length > 0 ? normalized : [criarMaoTruco(1, { s1: 0, s2: 0 })];
+}
+
+function normalizarEventoTruco(event, roundNumber) {
+    if (!event || typeof event !== 'object') return null;
+    const points = parseInt(event.points, 10);
+    if (!Number.isFinite(points) || points === 0) return null;
+
+    return {
+        id: event.id || criarIdTruco(),
+        roundNumber,
+        team: event.team === 2 ? 2 : 1,
+        category: event.category || 'Ajuste',
+        label: event.label || 'Pontuação',
+        points,
+        basePoints: parseInt(event.basePoints, 10) || points,
+        dynamic: Boolean(event.dynamic),
+        createdAt: event.createdAt || Date.now(),
+        score: {
+            s1: clamp(parseInt(event.score?.s1, 10) || 0, 0, 30),
+            s2: clamp(parseInt(event.score?.s2, 10) || 0, 0, 30)
+        }
+    };
+}
+
+function calcularScoreRodadas(rounds, maxPontos) {
+    return rounds.reduce((score, round) => {
+        round.events.forEach(event => {
+            if (event.team === 1) score.s1 = clamp(score.s1 + event.points, 0, maxPontos);
+            if (event.team === 2) score.s2 = clamp(score.s2 + event.points, 0, maxPontos);
+        });
+        return score;
+    }, { s1: 0, s2: 0 });
+}
+
+function reconstruirLogRodadas(rounds, maxPontos) {
+    const log = [{ t: Date.now(), s1: 0, s2: 0 }];
+    const score = { s1: 0, s2: 0 };
+
+    rounds.forEach(round => {
+        round.events.forEach(event => {
+            if (event.team === 1) score.s1 = clamp(score.s1 + event.points, 0, maxPontos);
+            if (event.team === 2) score.s2 = clamp(score.s2 + event.points, 0, maxPontos);
+            log.push({ t: event.createdAt || Date.now(), s1: score.s1, s2: score.s2 });
+        });
+    });
+
+    return log;
+}
+
+function obterNumeroMaoAtual(rounds) {
+    return rounds.length > 0 ? rounds[rounds.length - 1].number : 1;
+}
+
+function criarIdTruco() {
+    return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function criarMaoTruco(number, start) {
+    return {
+        id: criarIdTruco(),
+        number,
+        openedAt: Date.now(),
+        start: {
+            s1: start?.s1 || 0,
+            s2: start?.s2 || 0
+        },
+        events: []
+    };
+}
+
+function resetarRodadasTruco() {
+    gameState.truco.roundNumber = 1;
+    gameState.truco.rounds = [criarMaoTruco(1, { s1: gameState.truco.s1, s2: gameState.truco.s2 })];
+}
+
+function obterMaoAtual() {
+    if (!Array.isArray(gameState.truco.rounds) || gameState.truco.rounds.length === 0) {
+        resetarRodadasTruco();
+    }
+
+    return gameState.truco.rounds[gameState.truco.rounds.length - 1];
+}
+
 function mudarModo(modo, btn) {
+    if (!['truco', 'fodinha'].includes(modo)) return;
     gameState.mode = modo;
     atualizarVisualSeletor(btn);
     alternarPaineisSetup(modo);
     salvarEstado();
 }
 
-// Atualiza apenas o visual do botão e do "glider"
 function atualizarVisualSeletor(btn) {
     if (!btn) return;
+    const container = btn.closest('.segmented-control');
+    if (!container) return;
 
-    // Remove active de todos e adiciona no atual
-    const container = btn.parentNode;
-    container.querySelectorAll('.segment-opt').forEach(b => b.classList.remove('active'));
+    const buttons = [...container.querySelectorAll('.segment-opt')];
+    buttons.forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 
-    // Move a barrinha (glider)
-    const glider = document.getElementById('mode-glider');
-    const buttons = [...container.querySelectorAll('button')];
-    if (glider && buttons.length > 0) {
-        glider.style.transform = `translateX(${buttons.indexOf(btn) * 100}%)`;
+    const glider = container.querySelector('.segment-glider');
+    const index = buttons.indexOf(btn);
+    if (glider && index >= 0) {
+        glider.style.transform = `translateX(${index * 100}%)`;
     }
 }
 
-// Mostra/Esconde os painéis de configuração (inputs)
 function alternarPaineisSetup(modo) {
     const setupTruco = document.getElementById('setup-truco');
     const setupFodinha = document.getElementById('setup-fodinha');
@@ -92,115 +276,115 @@ function alternarPaineisSetup(modo) {
     if (setupFodinha) setupFodinha.classList.toggle('hidden', modo !== 'fodinha');
 }
 
-// Garante que o botão visualmente ativo corresponda ao gameState.mode
 function sincronizarInterfaceComEstado() {
-    // Acha o botão correspondente ao modo salvo
-    const btnAlvo = document.querySelector(`.mode-selector button[onclick*="'${gameState.mode}'"]`);
+    const btnModo = document.querySelector(`.mode-selector button[onclick*="'${gameState.mode}'"]`);
+    if (btnModo) atualizarVisualSeletor(btnModo);
+    alternarPaineisSetup(gameState.mode);
 
-    if (btnAlvo) {
-        atualizarVisualSeletor(btnAlvo);
-        alternarPaineisSetup(gameState.mode);
-    }
+    const inputTime1 = document.getElementById('input-time1');
+    const inputTime2 = document.getElementById('input-time2');
+    const inputMax = document.getElementById('input-max');
+    const vidasInput = document.getElementById('input-vidas-max');
 
-    // Sincroniza visualmente os pontos do truco (12, 24, 30)
-    if (gameState.mode === 'truco') {
-        const botoesPonto = document.querySelectorAll('#setup-truco .segment-opt');
-        botoesPonto.forEach(btn => {
-            // Remove active de todos primeiro
-            btn.classList.remove('active');
-            // Adiciona active se for o valor salvo
-            if (parseInt(btn.innerText) === gameState.truco.max) {
-                btn.classList.add('active');
-                // Move o glider dos pontos
-                const glider = btn.parentNode.querySelector('.segment-glider');
-                const index = [...btn.parentNode.querySelectorAll('button')].indexOf(btn);
-                if (glider) glider.style.transform = `translateX(${index * 100}%)`;
-            }
-        });
-    }
+    if (inputTime1) inputTime1.value = gameState.truco.n1 || '';
+    if (inputTime2) inputTime2.value = gameState.truco.n2 || '';
+    if (inputMax) inputMax.value = gameState.truco.max;
+    if (vidasInput) vidasInput.value = gameState.fodinha.maxVidas;
+
+    const pontosBtns = document.querySelectorAll('#setup-truco .points-selector .segment-opt');
+    pontosBtns.forEach(btn => {
+        if (parseInt(btn.textContent, 10) === gameState.truco.max) {
+            atualizarVisualSeletor(btn);
+        }
+    });
 }
 
 function mostrarTela(id) {
     const screens = document.querySelectorAll('.screen');
     const newScreen = document.getElementById(id);
+    if (!newScreen) return;
 
-    // Encontra a tela ativa atual
-    let currentScreen = null;
-    screens.forEach(s => {
-        if (s.classList.contains('active')) currentScreen = s;
-    });
+    const currentScreen = [...screens].find(s => s.classList.contains('active'));
+    if (currentScreen && currentScreen.id === id) return;
 
-    if (currentScreen && currentScreen.id === id) return; // Já está nela
+    newScreen.classList.remove('hidden', 'exit');
+    void newScreen.offsetWidth;
+    newScreen.classList.add('active');
 
-    // Preparação para entrada
-    if (newScreen) {
-        newScreen.classList.remove('hidden');
-        newScreen.classList.remove('exit');
-        // Force reflow
-        void newScreen.offsetWidth;
-        newScreen.classList.add('active');
-    }
-
-    // Saída da atual
     if (currentScreen) {
         currentScreen.classList.remove('active');
         currentScreen.classList.add('exit');
-
-        // Espera a transição terminar para dar display:none
         setTimeout(() => {
             currentScreen.classList.add('hidden');
             currentScreen.classList.remove('exit');
-        }, 300); // 300ms match css transition
+        }, 230);
     } else {
-        // Se não tinha tela ativa (load inicial), garante que as outras fiquem hidden
         screens.forEach(s => {
             if (s !== newScreen) s.classList.add('hidden');
         });
     }
 }
 
-/* ================= SETUP ================= */
 function selPonto(valor, btn) {
     gameState.truco.max = valor;
-
-    const container = btn.parentNode;
-    container.querySelectorAll('.segment-opt').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-
-    const index = [...container.querySelectorAll('button')].indexOf(btn);
-    const glider = container.querySelector('.segment-glider');
-    if (glider) glider.style.transform = `translateX(${index * 100}%)`;
+    const inputMax = document.getElementById('input-max');
+    if (inputMax) inputMax.value = valor;
+    atualizarVisualSeletor(btn);
+    salvarEstado();
 }
 
-/* --- Setup Fodinha --- */
 function renderSetupFodinha() {
     const container = document.getElementById('players-container');
     if (!container) return;
 
-    container.innerHTML = '';
+    container.replaceChildren();
 
-    gameState.fodinha.players.forEach((p, i) => {
-        const div = document.createElement('div');
-        div.className = 'player-input-card anim-slide-up';
-        div.style.animationDelay = `${i * 0.05}s`; // Stagger effect
-        div.innerHTML = `
-            <div style="margin-right:10px; font-weight:bold; color:#666;">${i + 1}</div>
-            <input type="text" value="${p.name}" placeholder="Nome"
-                   oninput="atualizarNomeFodinha(${i}, this.value)">
-            ${gameState.fodinha.players.length > 2
-                ? `<button class="btn-remove-mini" onclick="removerJogador(${i})">×</button>`
-                : ''}
-        `;
-        container.appendChild(div);
+    gameState.fodinha.players.forEach((player, index) => {
+        const canRemove = gameState.fodinha.players.length > 2;
+        const card = document.createElement('div');
+        card.className = `player-input-card anim-slide-up${canRemove ? '' : ' no-remove'}`;
+
+        const badge = document.createElement('span');
+        badge.className = 'player-index';
+        badge.textContent = index + 1;
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = player.name || '';
+        input.placeholder = 'Nome do jogador';
+        input.autocomplete = 'off';
+        input.addEventListener('input', () => atualizarNomeFodinha(index, input.value));
+
+        card.append(badge, input);
+
+        if (canRemove) {
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'btn-remove-mini';
+            remove.textContent = '×';
+            remove.setAttribute('aria-label', `Remover jogador ${index + 1}`);
+            remove.addEventListener('click', () => removerJogador(index));
+            card.appendChild(remove);
+        }
+
+        container.appendChild(card);
     });
 }
 
 function atualizarNomeFodinha(idx, val) {
+    if (!gameState.fodinha.players[idx]) return;
     gameState.fodinha.players[idx].name = val;
     salvarEstado();
 }
 
 function addFodinhaPlayer() {
+    if (gameState.fodinha.players.length >= MAX_FODINHA_PLAYERS) {
+        abrirModal('Limite de jogadores', `Você pode adicionar até ${MAX_FODINHA_PLAYERS} jogadores.`, 'OK', null, {
+            hideCancel: true
+        });
+        return;
+    }
+
     gameState.fodinha.players.push({ name: '', score: 0 });
     renderSetupFodinha();
     salvarEstado();
@@ -213,48 +397,32 @@ function removerJogador(i) {
     salvarEstado();
 }
 
-/* ================= INICIAR JOGO ================= */
 function iniciarJogo() {
-    // 1. DETECÇÃO VISUAL SEGURA
-    // Verifica qual botão está visualmente com a classe 'active' para definir o modo.
-    const botaoAtivo = document.querySelector('.mode-selector .segment-opt.active');
-    if (botaoAtivo) {
-        const textoBotao = botaoAtivo.innerText.toLowerCase();
-        if (textoBotao.includes('truco')) {
-            gameState.mode = 'truco';
-        } else if (textoBotao.includes('fodinha')) {
-            gameState.mode = 'fodinha';
-        }
-    }
-
+    stopConfetti();
     gameState.ativo = true;
-    gameState.matchSaved = false; // Reseta flag de histórico para nova partida
-    gameState.log = []; // Reseta log
-
-    // Log inicial (0x0)
-    if (gameState.mode === 'truco') {
-        gameState.log.push({ t: Date.now(), s1: 0, s2: 0 });
-    }
+    gameState.matchSaved = false;
+    gameState.savedMatchId = null;
+    gameState.log = [];
 
     if (gameState.mode === 'truco') {
-        // Configura Truco
         gameState.truco.n1 = inputVal('input-time1');
         gameState.truco.n2 = inputVal('input-time2');
-
-        // Pega o valor máximo dos botões de ponto
-        const btnPontoAtivo = document.querySelector('#setup-truco .segmented-control .segment-opt.active');
-        if (btnPontoAtivo) {
-            gameState.truco.max = parseInt(btnPontoAtivo.innerText) || 12;
-        }
+        gameState.truco.max = clamp(parseInt(inputVal('input-max'), 10) || gameState.truco.max || 12, 12, 30);
+        if (![12, 24, 30].includes(gameState.truco.max)) gameState.truco.max = 12;
+        gameState.truco.s1 = 0;
+        gameState.truco.s2 = 0;
+        gameState.truco.selectedTeam = 1;
+        resetarRodadasTruco();
+        registrarSnapshotTruco();
 
         atualizarTelaTruco();
         mostrarTela('game-screen-truco');
-        setupGestos();
-
     } else {
-        // Configura Fodinha
-        const vidasInput = parseInt(inputVal('input-vidas-max'));
-        gameState.fodinha.maxVidas = vidasInput && vidasInput > 0 ? vidasInput : 5;
+        gameState.fodinha.maxVidas = clamp(parseInt(inputVal('input-vidas-max'), 10) || 5, 1, 99);
+        gameState.fodinha.players = gameState.fodinha.players.map(player => ({
+            name: (player.name || '').trim(),
+            score: 0
+        }));
 
         renderGameFodinha();
         mostrarTela('game-screen-fodinha');
@@ -263,236 +431,476 @@ function iniciarJogo() {
     salvarEstado();
 }
 
-/* ================= LÓGICA DO TRUCO ================= */
 function mudarPontos(time, delta) {
-    alterarPonto(time, delta);
-}
-
-function setupGestos() {
-    criarGesto('card-time1', 1);
-    criarGesto('card-time2', 2);
-}
-
-function criarGesto(id, time) {
-    const el = document.getElementById(id);
-    if (!el) return;
-
-    // Limpa eventos antigos
-    el.ontouchstart = null;
-    el.ontouchend = null;
-    el.ontouchmove = null;
-
-    el.addEventListener('touchstart', e => {
-        touchStartY = e.touches[0].clientY;
-        isSwiping = false;
-    }, { passive: true });
-
-    el.addEventListener('touchmove', e => {
-        if (Math.abs(e.touches[0].clientY - touchStartY) > 10) {
-            isSwiping = true;
-        }
-    }, { passive: true });
-
-    el.addEventListener('touchend', e => {
-        const dy = e.changedTouches[0].clientY - touchStartY;
-
-        // Swipe detectado (> 60px)
-        if (Math.abs(dy) > 60) {
-            isSwiping = true;
-            lastInteraction = Date.now();
-
-            // Cima = +1, Baixo = -1
-            const pontos = dy < 0 ? 1 : -1;
-            alterarPonto(time, pontos);
-        } else {
-            isSwiping = false;
-        }
-    });
+    const preset = delta >= 0
+        ? { category: 'Ajuste', label: 'Ajuste manual', points: delta }
+        : { category: 'Ajuste', label: 'Correção manual', points: delta };
+    registrarEventoTrucoCustom(time, preset);
 }
 
 function pontuarTap(time) {
-    const agora = Date.now();
-    // Evita duplo clique fantasma após swipe
-    if (agora - lastInteraction < 500) return;
-    if (isSwiping) return;
-
-    alterarPonto(time, 1);
+    selecionarTimePontuacao(time);
+    registrarEventoTruco('ajusteMais');
 }
 
-function alterarPonto(time, delta) {
-    if (!gameState.ativo) return;
-    const t = gameState.truco;
+function setupGestos() {}
 
-    if (time === 1) t.s1 += delta; else t.s2 += delta;
+function criarGesto() {}
 
-    // Limites (0 até Max)
-    t.s1 = Math.max(0, Math.min(t.max, t.s1));
-    t.s2 = Math.max(0, Math.min(t.max, t.s2));
+function selecionarTimePontuacao(time, btn) {
+    if (![1, 2].includes(time)) return;
+    gameState.truco.selectedTeam = time;
 
-    // Log update
-    if (!gameState.log) gameState.log = [];
-    gameState.log.push({ t: Date.now(), s1: t.s1, s2: t.s2 });
+    const buttons = [
+        document.getElementById('point-team-1'),
+        document.getElementById('point-team-2')
+    ].filter(Boolean);
 
+    buttons.forEach(button => button.classList.remove('active'));
+    const target = btn || document.getElementById(`point-team-${time}`);
+    if (target) target.classList.add('active');
+
+    atualizarValoresAutomaticosTruco();
+    salvarEstado();
+}
+
+function registrarEventoTruco(tipo) {
+    const preset = TRUCO_POINT_PRESETS[tipo];
+    if (!preset) return;
+    registrarEventoTrucoCustom(gameState.truco.selectedTeam || 1, preset);
+}
+
+function registrarEventoTrucoCustom(time, preset) {
+    if (!gameState.ativo || gameState.mode !== 'truco') return;
+    if (gameState.matchSaved) {
+        abrirModal('Partida encerrada', 'Use desfazer para corrigir o último lançamento ou inicie uma nova partida.', 'OK', null, {
+            hideCancel: true
+        });
+        return;
+    }
+
+    const truco = gameState.truco;
+    const basePoints = preset.dynamic === 'falta' ? calcularFaltaEnvido(time) : preset.points;
+    const scoreAtual = time === 1 ? truco.s1 : truco.s2;
+    const novoScore = clamp(scoreAtual + basePoints, 0, truco.max);
+    const pontosAplicados = novoScore - scoreAtual;
+
+    if (pontosAplicados === 0) return;
+
+    const round = obterMaoAtual();
+    round.events.push({
+        id: criarIdTruco(),
+        roundNumber: round.number,
+        team: time,
+        category: preset.category,
+        label: preset.label,
+        points: pontosAplicados,
+        basePoints,
+        dynamic: preset.dynamic === 'falta',
+        createdAt: Date.now(),
+        score: { s1: truco.s1, s2: truco.s2 }
+    });
+
+    recalcularTrucoPorEventos();
+    const vencedor = obterVencedorTruco();
     atualizarTelaTruco();
     salvarEstado();
 
-    // Vitória
-    if (t.s1 === t.max || t.s2 === t.max) {
+    if (vencedor) {
         startConfetti();
-        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-
-        // Registrar no Histórico
-        const nomeVencedor = t.s1 === t.max ? (t.n1 || 'NÓS') : (t.n2 || 'ELES');
-        const placarFinal = `${t.s1} x ${t.s2}`;
-        registrarVitoria(nomeVencedor, placarFinal, 'truco');
-
+        vibrar([80, 40, 80]);
+        registrarVitoria(vencedor.nome, `${truco.s1} x ${truco.s2}`, 'truco');
     } else {
         stopConfetti();
     }
 }
 
-function atualizarTelaTruco() {
-    const s1 = document.getElementById('score-time1');
-    const s2 = document.getElementById('score-time2');
+function alterarPonto(time, delta) {
+    mudarPontos(time, delta);
+}
 
-    atualizarNumeroComAnimacao(s1, gameState.truco.s1);
-    atualizarNumeroComAnimacao(s2, gameState.truco.s2);
+function novaMaoTruco() {
+    if (!gameState.ativo || gameState.mode !== 'truco') return;
+    if (obterVencedorTruco()) return;
+
+    const round = obterMaoAtual();
+    if (round.events.length === 0) return;
+
+    const nextNumber = round.number + 1;
+    gameState.truco.roundNumber = nextNumber;
+    gameState.truco.rounds.push(criarMaoTruco(nextNumber, {
+        s1: gameState.truco.s1,
+        s2: gameState.truco.s2
+    }));
+
+    atualizarTelaTruco();
+    salvarEstado();
+}
+
+function desfazerUltimoPonto() {
+    if (gameState.mode !== 'truco') return;
+
+    removerResultadoAtualSePendente();
+    const removed = removerUltimoEventoTruco();
+    if (!removed) return;
+
+    recalcularTrucoPorEventos();
+
+    atualizarTelaTruco();
+    stopConfetti();
+    salvarEstado();
+}
+
+function removerUltimoEventoTruco() {
+    if (!Array.isArray(gameState.truco.rounds)) return null;
+
+    for (let i = gameState.truco.rounds.length - 1; i >= 0; i--) {
+        const round = gameState.truco.rounds[i];
+        if (round.events.length > 0) {
+            return round.events.pop();
+        }
+
+        if (i > 0 && round.events.length === 0) {
+            gameState.truco.rounds.splice(i, 1);
+        }
+    }
+
+    return null;
+}
+
+function recalcularTrucoPorEventos() {
+    const truco = gameState.truco;
+    const score = { s1: 0, s2: 0 };
+    gameState.log = [{ t: Date.now(), s1: 0, s2: 0 }];
+
+    if (!Array.isArray(truco.rounds) || truco.rounds.length === 0) {
+        resetarRodadasTruco();
+    }
+
+    truco.rounds.forEach(round => {
+        round.start = { s1: score.s1, s2: score.s2 };
+        round.events.forEach(event => {
+            if (event.team === 1) score.s1 = clamp(score.s1 + event.points, 0, truco.max);
+            if (event.team === 2) score.s2 = clamp(score.s2 + event.points, 0, truco.max);
+            event.score = { s1: score.s1, s2: score.s2 };
+            gameState.log.push({ t: event.createdAt || Date.now(), s1: score.s1, s2: score.s2 });
+        });
+    });
+
+    truco.s1 = score.s1;
+    truco.s2 = score.s2;
+    truco.roundNumber = obterMaoAtual().number;
+}
+
+function registrarSnapshotTruco() {
+    if (!Array.isArray(gameState.log)) gameState.log = [];
+    const ultimo = gameState.log[gameState.log.length - 1];
+    const snapshot = {
+        t: Date.now(),
+        s1: gameState.truco.s1,
+        s2: gameState.truco.s2
+    };
+
+    if (!ultimo || ultimo.s1 !== snapshot.s1 || ultimo.s2 !== snapshot.s2) {
+        gameState.log.push(snapshot);
+    }
+}
+
+function obterVencedorTruco() {
+    const truco = gameState.truco;
+    if (truco.s1 >= truco.max) return { nome: truco.n1 || 'NÓS', time: 1 };
+    if (truco.s2 >= truco.max) return { nome: truco.n2 || 'ELES', time: 2 };
+    return null;
+}
+
+function calcularFaltaEnvido(time) {
+    const score = time === 1 ? gameState.truco.s1 : gameState.truco.s2;
+    return Math.max(1, gameState.truco.max - score);
+}
+
+function obterNomeTime(time) {
+    if (time === 1) return gameState.truco.n1 || 'NÓS';
+    return gameState.truco.n2 || 'ELES';
+}
+
+function atualizarTelaTruco() {
+    atualizarNumeroComAnimacao(document.getElementById('score-time1'), gameState.truco.s1);
+    atualizarNumeroComAnimacao(document.getElementById('score-time2'), gameState.truco.s2);
 
     const n1 = document.getElementById('nome-time1');
     const n2 = document.getElementById('nome-time2');
-    if (n1) n1.innerText = gameState.truco.n1 || 'NÓS';
-    if (n2) n2.innerText = gameState.truco.n2 || 'ELES';
-
     const meta = document.getElementById('display-meta');
-    if (meta) meta.innerText = gameState.truco.max;
-
     const c1 = document.getElementById('card-time1');
     const c2 = document.getElementById('card-time2');
-    if (c1) c1.classList.toggle('winning', gameState.truco.s1 === gameState.truco.max);
-    if (c2) c2.classList.toggle('winning', gameState.truco.s2 === gameState.truco.max);
+
+    if (n1) n1.textContent = gameState.truco.n1 || 'NÓS';
+    if (n2) n2.textContent = gameState.truco.n2 || 'ELES';
+    if (meta) meta.textContent = gameState.truco.max;
+    if (c1) c1.classList.toggle('winning', gameState.truco.s1 >= gameState.truco.max);
+    if (c2) c2.classList.toggle('winning', gameState.truco.s2 >= gameState.truco.max);
+
+    const roundDisplay = document.getElementById('display-round');
+    if (roundDisplay) roundDisplay.textContent = obterMaoAtual().number;
+
+    selecionarTimePontuacao(gameState.truco.selectedTeam || 1);
+    renderTrucoRoundLog();
+    renderTrucoSourceSummary();
+    atualizarValoresAutomaticosTruco();
 }
 
-/* ================= LÓGICA DO FODINHA ================= */
+function atualizarValoresAutomaticosTruco() {
+    const falta = calcularFaltaEnvido(gameState.truco.selectedTeam || 1);
+    const faltaEl = document.getElementById('falta-envido-value');
+    const contraFlorEl = document.getElementById('contra-flor-resto-value');
+
+    if (faltaEl) faltaEl.textContent = formatarPontos(falta);
+    if (contraFlorEl) contraFlorEl.textContent = formatarPontos(falta);
+
+    const team1 = document.getElementById('point-team-1');
+    const team2 = document.getElementById('point-team-2');
+    if (team1) team1.textContent = gameState.truco.n1 || 'Nós';
+    if (team2) team2.textContent = gameState.truco.n2 || 'Eles';
+}
+
+function renderTrucoRoundLog() {
+    const container = document.getElementById('truco-round-log');
+    if (!container) return;
+
+    const round = obterMaoAtual();
+    if (!round.events.length) {
+        container.innerHTML = `
+            <div class="empty-inline">
+                <strong>Mão ${round.number} sem pontos</strong>
+                <span>Escolha a dupla e lance Envido, Flor ou Truco.</span>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = [...round.events].reverse().map(event => `
+        <article class="round-event">
+            <div>
+                <strong>${escapeHtml(event.label)}</strong>
+                <span>${escapeHtml(event.category)} · ${escapeHtml(obterNomeTime(event.team))}</span>
+            </div>
+            <div class="event-score">
+                <strong>${formatarPontos(event.points)}</strong>
+                <span>${event.score.s1} x ${event.score.s2}</span>
+            </div>
+        </article>
+    `).join('');
+}
+
+function renderTrucoSourceSummary() {
+    const container = document.getElementById('truco-source-summary');
+    if (!container) return;
+
+    const totals = obterResumoTrucoPorCategoria();
+    if (!totals.length) {
+        container.innerHTML = `
+            <div class="empty-inline">
+                <strong>Ainda sem origem registrada</strong>
+                <span>Os totais por Envido, Flor e Truco aparecem aqui.</span>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = `
+        ${totals.map(item => `
+            <div class="summary-row">
+                <span>${escapeHtml(item.category)}</span>
+                <strong>${item.team1} x ${item.team2}</strong>
+            </div>
+        `).join('')}
+    `;
+}
+
+function obterResumoTrucoPorCategoria(rounds = gameState.truco.rounds) {
+    const order = ['Envido', 'Flor', 'Truco', 'Ajuste'];
+    const totals = new Map(order.map(category => [category, { category, team1: 0, team2: 0 }]));
+
+    (rounds || []).forEach(round => {
+        (round.events || []).forEach(event => {
+            if (!totals.has(event.category)) {
+                totals.set(event.category, { category: event.category, team1: 0, team2: 0 });
+            }
+
+            const total = totals.get(event.category);
+            if (event.team === 1) total.team1 += event.points;
+            if (event.team === 2) total.team2 += event.points;
+        });
+    });
+
+    return [...totals.values()]
+        .filter(item => item.team1 !== 0 || item.team2 !== 0)
+        .sort((a, b) => order.indexOf(a.category) - order.indexOf(b.category));
+}
+
+function contarMaosComPontos(rounds = []) {
+    return rounds.filter(round => Array.isArray(round.events) && round.events.length > 0).length || 1;
+}
+
+function clonarRodadasTruco(rounds = []) {
+    return rounds.map(round => ({
+        id: round.id,
+        number: round.number,
+        openedAt: round.openedAt,
+        start: { ...round.start },
+        events: round.events.map(event => ({
+            id: event.id,
+            roundNumber: event.roundNumber,
+            team: event.team,
+            category: event.category,
+            label: event.label,
+            points: event.points,
+            basePoints: event.basePoints,
+            dynamic: event.dynamic,
+            createdAt: event.createdAt,
+            score: { ...event.score }
+        }))
+    }));
+}
+
+function formatarPontos(points) {
+    return points > 0 ? `+${points}` : `${points}`;
+}
+
 function renderGameFodinha() {
     const grid = document.getElementById('fodinha-game-grid');
     if (!grid) return;
-    grid.innerHTML = '';
 
-    const displayMax = document.getElementById('display-fodinha-max');
-    if (displayMax) displayMax.innerText = gameState.fodinha.maxVidas;
-
-    const vivos = gameState.fodinha.players.filter(p => p.score < gameState.fodinha.maxVidas);
+    const maxVidas = gameState.fodinha.maxVidas;
+    const vivos = gameState.fodinha.players.filter(p => p.score < maxVidas);
     const temVencedor = vivos.length === 1 && gameState.fodinha.players.length > 1;
 
-    gameState.fodinha.players.forEach((p, i) => {
-        const eliminado = p.score >= gameState.fodinha.maxVidas;
-        const ehRei = temVencedor && !eliminado;
+    if (!temVencedor) {
+        removerResultadoAtualSePendente();
+        stopConfetti();
+    }
 
-        const card = document.createElement('div');
-        card.className = `fodinha-card ${eliminado ? 'eliminated' : ''} ${ehRei ? 'winner' : ''}`;
+    const displayMax = document.getElementById('display-fodinha-max');
+    if (displayMax) displayMax.textContent = maxVidas;
 
-        card.innerHTML = `
-            <div class="fodinha-name">${p.name || `P${i + 1}`}</div>
-            <div class="fodinha-score">${p.score}</div>
-            <div class="fodinha-controls">
-                <button class="btn-fodinha-ctrl" onclick="alterarVida(${i},-1)">−</button>
-                <button class="btn-fodinha-ctrl btn-fodinha-plus" onclick="alterarVida(${i},1)">+</button>
-            </div>
-        `;
+    grid.replaceChildren();
+
+    gameState.fodinha.players.forEach((player, index) => {
+        const eliminado = player.score >= maxVidas;
+        const vencedor = temVencedor && !eliminado;
+        const vidasRestantes = Math.max(0, maxVidas - player.score);
+        const percentualRestante = maxVidas > 0 ? (vidasRestantes / maxVidas) * 100 : 0;
+
+        const card = document.createElement('article');
+        card.className = `fodinha-card${eliminado ? ' eliminated' : ''}${vencedor ? ' winner' : ''}`;
+
+        const nameRow = document.createElement('div');
+        nameRow.className = 'fodinha-name-row';
+
+        const name = document.createElement('span');
+        name.className = 'fodinha-name';
+        name.textContent = player.name || `Jogador ${index + 1}`;
+
+        const status = document.createElement('span');
+        status.className = 'fodinha-status';
+        status.textContent = vencedor ? 'Venceu' : (eliminado ? 'Fora' : `${vidasRestantes} vidas`);
+
+        const score = document.createElement('output');
+        score.className = 'fodinha-score';
+        score.textContent = player.score;
+
+        const meter = document.createElement('div');
+        meter.className = 'life-meter';
+
+        const meterFill = document.createElement('div');
+        meterFill.className = 'life-meter-fill';
+        meterFill.style.width = `${percentualRestante}%`;
+        meter.appendChild(meterFill);
+
+        const controls = document.createElement('div');
+        controls.className = 'fodinha-controls';
+
+        const minus = document.createElement('button');
+        minus.type = 'button';
+        minus.className = 'btn-fodinha-ctrl';
+        minus.textContent = '−';
+        minus.setAttribute('aria-label', `Remover vida perdida de ${name.textContent}`);
+        minus.addEventListener('click', () => alterarVida(index, -1));
+
+        const plus = document.createElement('button');
+        plus.type = 'button';
+        plus.className = 'btn-fodinha-ctrl btn-fodinha-plus';
+        plus.textContent = '+';
+        plus.setAttribute('aria-label', `Adicionar vida perdida para ${name.textContent}`);
+        plus.addEventListener('click', () => alterarVida(index, 1));
+
+        nameRow.append(name, status);
+        controls.append(minus, plus);
+        card.append(nameRow, score, meter, controls);
         grid.appendChild(card);
     });
 
     if (temVencedor) {
         startConfetti();
-        // Registrar no Histórico
+        vibrar([80, 40, 80]);
         const vencedor = vivos[0];
-        const nomeVenc = vencedor.name || 'Jogador';
-        registrarVitoria(nomeVenc, 'Sobrevivente', 'fodinha');
-    } else {
-        stopConfetti();
+        registrarVitoria(vencedor.name || 'Jogador', 'Sobrevivente', 'fodinha');
     }
 }
 
 function alterarVida(index, delta) {
-    const p = gameState.fodinha.players[index];
-    const max = gameState.fodinha.maxVidas;
+    if (!gameState.ativo || gameState.mode !== 'fodinha') return;
 
-    // Não permite aumentar vida se já morreu
-    if (p.score >= max && delta > 0) return;
+    const player = gameState.fodinha.players[index];
+    if (!player) return;
 
-    p.score += delta;
-    if (p.score < 0) p.score = 0;
+    const antes = player.score;
+    player.score = clamp(player.score + delta, 0, gameState.fodinha.maxVidas);
+    if (antes === player.score) return;
 
     salvarEstado();
-    // Renderiza apenas se houve mudança visual significativa ou usa animação pontual
-    // Para simplificar e manter sincronia:
     renderGameFodinha();
 }
 
 function atualizarNumeroComAnimacao(el, novoValor) {
     if (!el) return;
-    const valorAtual = parseInt(el.innerText);
-    if (valorAtual !== novoValor) {
-        el.innerText = novoValor;
-        el.classList.remove('anim-pop');
-        void el.offsetWidth; // Force reflow
-        el.classList.add('anim-pop');
-    }
-}
+    const valorAtual = parseInt(el.textContent, 10);
+    if (valorAtual === novoValor) return;
 
-/* ================= MODAIS E RESET ================= */
-function abrirModal(titulo, mensagem, btnTxt, callback) {
-    const titEl = document.getElementById('modal-title');
-    const msgEl = document.getElementById('modal-msg');
-    if (titEl) titEl.innerText = titulo;
-    if (msgEl) msgEl.innerText = mensagem;
-
-    // Reset msg content (remove custom html if any from previous calls)
-    if (msgEl && !mensagem.includes('<')) msgEl.innerHTML = mensagem.replace(/\n/g, '<br>');
-
-    const btnConfirm = document.getElementById('modal-btn-confirm');
-    if (btnConfirm) {
-        btnConfirm.innerText = btnTxt;
-        const novoBtn = btnConfirm.cloneNode(true);
-        btnConfirm.parentNode.replaceChild(novoBtn, btnConfirm);
-        novoBtn.onclick = () => { if (callback) callback(); fecharModal(); };
-    }
-
-    const modal = document.getElementById('custom-modal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        // Force reflow for animation
-        void modal.offsetWidth;
-        modal.classList.add('active');
-    }
-}
-
-function fecharModal() {
-    const modal = document.getElementById('custom-modal');
-    if (modal) {
-        modal.classList.remove('active');
-        setTimeout(() => modal.classList.add('hidden'), 300);
-    }
+    el.textContent = novoValor;
+    el.classList.remove('anim-pop');
+    void el.offsetWidth;
+    el.classList.add('anim-pop');
 }
 
 function confirmarSaida() {
-    abrirModal('Sair da partida', 'O jogo será encerrado.', 'Sair', resetarTudo);
+    abrirModal('Sair da partida', 'A partida atual será encerrada. O histórico salvo não será apagado.', 'Sair', resetarTudo, {
+        destructive: true
+    });
 }
 
 function confirmarZerar() {
-    abrirModal('Zerar pontos', 'Deseja reiniciar a contagem?', 'Zerar', zerarPontuacaoAtual);
+    abrirModal('Zerar pontos', 'A contagem da partida atual voltará para zero.', 'Zerar', zerarPontuacaoAtual, {
+        destructive: true
+    });
 }
 
 function zerarPontuacaoAtual() {
-    gameState.matchSaved = false; // Permite salvar novamente se zerar os pontos na mesma partida
+    removerResultadoAtualSePendente();
+    gameState.matchSaved = false;
+    gameState.savedMatchId = null;
+
     if (gameState.mode === 'truco') {
         gameState.truco.s1 = 0;
         gameState.truco.s2 = 0;
+        gameState.log = [];
+        resetarRodadasTruco();
+        registrarSnapshotTruco();
         atualizarTelaTruco();
     } else {
-        gameState.fodinha.players.forEach(p => p.score = 0);
+        gameState.fodinha.players.forEach(player => player.score = 0);
         renderGameFodinha();
     }
+
     stopConfetti();
     salvarEstado();
 }
@@ -500,99 +908,114 @@ function zerarPontuacaoAtual() {
 function resetarTudo() {
     gameState.ativo = false;
     gameState.matchSaved = false;
-    stopConfetti();
-
-    // Reseta pontos
-    // Reseta pontos
+    gameState.savedMatchId = null;
     gameState.truco.s1 = 0;
     gameState.truco.s2 = 0;
-    gameState.fodinha.players.forEach(p => p.score = 0);
+    gameState.truco.roundNumber = 1;
+    gameState.truco.rounds = [];
+    gameState.fodinha.players.forEach(player => player.score = 0);
     gameState.log = [];
 
+    stopConfetti();
     mostrarTela('setup-screen');
     renderSetupFodinha();
-
     sincronizarInterfaceComEstado();
     salvarEstado();
 }
 
-/* ================= HISTÓRICO (NOVO) ================= */
-
 function registrarVitoria(vencedor, placar, modo) {
-    if (gameState.matchSaved) return; // Evita duplicidade
+    if (gameState.matchSaved) return;
 
-    gameState.matchSaved = true;
+    const data = new Date();
+    const partida = criarPartida(vencedor, placar, modo, data);
+    const historico = carregarHistorico();
 
-    // Captura dados dos jogadores para o histórico
-    let jogadores = [];
-    if (modo === 'truco') {
-        jogadores = [
-            { nome: gameState.truco.n1 || 'NÓS', pontos: gameState.truco.s1 },
-            { nome: gameState.truco.n2 || 'ELES', pontos: gameState.truco.s2 }
-        ];
-    } else {
-        // No Fodinha, salva o estado final de todos os jogadores
-        jogadores = gameState.fodinha.players.map(p => ({
-            nome: p.name,
-            vidas_perdidas: p.score,
-            status: p.score >= gameState.fodinha.maxVidas ? 'eliminado' : 'vencedor'
-        }));
-    }
-
-    const partida = {
-        id: Date.now(),
-        data: new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
-        modo: modo,
-        vencedor: vencedor,
-        placar: placar,
-        detalhes: modo === 'truco' ? `Max: ${gameState.truco.max}` : `${gameState.fodinha.players.length} Jogadores`,
-        jogadores: jogadores, // Novo campo
-        log: gameState.log || [] // Salva o histórico de pontos
-    };
-
-    const historico = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
-    historico.unshift(partida); // Adiciona no começo
-
-    // Limita histórico a 50 partidas
-    if (historico.length > 50) historico.pop();
-
+    historico.unshift(partida);
+    if (historico.length > MAX_HISTORY) historico.length = MAX_HISTORY;
     localStorage.setItem(HIST_KEY, JSON.stringify(historico));
 
-    // Se for Truco, mostra o modal de vitória COM o gráfico logo de cara
+    gameState.matchSaved = true;
+    gameState.savedMatchId = partida.id;
+    salvarEstado();
+
+    setTimeout(() => {
+        verDetalhesPartida(partida.id, true);
+    }, 650);
+}
+
+function criarPartida(vencedor, placar, modo, data) {
     if (modo === 'truco') {
-        setTimeout(() => {
-            verDetalhesPartida(partida.id); // Reusa a modal de detalhes
-        }, 1500); // Espera um pouco para ver os confetes
+        return {
+            id: Date.now(),
+            data: formatarData(data),
+            dataISO: data.toISOString(),
+            modo,
+            vencedor,
+            placar,
+            meta: gameState.truco.max,
+            detalhes: `Meta ${gameState.truco.max} · ${contarMaosComPontos(gameState.truco.rounds)} mãos`,
+            jogadores: [
+                { nome: gameState.truco.n1 || 'NÓS', pontos: gameState.truco.s1 },
+                { nome: gameState.truco.n2 || 'ELES', pontos: gameState.truco.s2 }
+            ],
+            rodadas: clonarRodadasTruco(gameState.truco.rounds),
+            resumo: obterResumoTrucoPorCategoria(),
+            log: [...(gameState.log || [])]
+        };
     }
+
+    return {
+        id: Date.now(),
+        data: formatarData(data),
+        dataISO: data.toISOString(),
+        modo,
+        vencedor,
+        placar,
+        meta: gameState.fodinha.maxVidas,
+        detalhes: `${gameState.fodinha.players.length} jogadores · ${gameState.fodinha.maxVidas} vidas`,
+        jogadores: gameState.fodinha.players.map((player, index) => ({
+            nome: player.name || `Jogador ${index + 1}`,
+            vidas_perdidas: player.score,
+            vidas_restantes: Math.max(0, gameState.fodinha.maxVidas - player.score),
+            status: player.score >= gameState.fodinha.maxVidas ? 'eliminado' : 'vencedor'
+        })),
+        log: []
+    };
 }
 
 function abrirHistorico() {
     const listaEl = document.getElementById('history-list');
-    const historico = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+    if (!listaEl) return;
 
+    const historico = carregarHistorico();
     mostrarTela('history-screen');
 
     if (historico.length === 0) {
-        listaEl.innerHTML = '<div style="text-align: center; color: #444; margin-top: 50px; font-weight:bold;">Nada por aqui ainda...<br>Vá jogar!</div>';
+        listaEl.innerHTML = `
+            <div class="empty-state">
+                <img src="logo-marcador.svg" alt="">
+                <strong>Nenhuma partida salva</strong>
+                <span>Os resultados aparecem aqui quando alguém vence.</span>
+            </div>
+        `;
         return;
     }
 
-    listaEl.innerHTML = historico.map((p, i) => `
-        <div class="history-card mode-${p.modo} anim-slide-up" style="animation-delay: ${i * 0.05}s;" onclick="verDetalhesPartida(${p.id})">
-            <div class="hist-header">
-                <span>${p.modo.toUpperCase()}</span>
-                <span>${p.data}</span>
+    listaEl.innerHTML = historico.map(partida => `
+        <article class="history-card mode-${escapeHtml(partida.modo || 'truco')}" onclick="verDetalhesPartida(${Number(partida.id)})">
+            <div class="history-meta">
+                <span>${escapeHtml(labelModo(partida.modo))}</span>
+                <span>${escapeHtml(partida.data || '')}</span>
             </div>
-            <div class="hist-main">
-                <div class="hist-winner">
-                    <span class="crown-icon">👑</span> ${p.vencedor}
-                </div>
-                <div class="hist-score">${p.placar}</div>
+            <div class="history-result">
+                <strong class="history-winner">${escapeHtml(partida.vencedor || 'Vencedor')}</strong>
+                <span class="history-score">${escapeHtml(partida.placar || '')}</span>
             </div>
-            <div class="hist-details">
-                ${p.detalhes} <span style="float:right; font-size: 0.8em; opacity: 0.7;">ℹ️ Ver detalhes</span>
+            <div class="history-detail">
+                <span>${escapeHtml(partida.detalhes || '')}</span>
+                <span>Ver detalhes</span>
             </div>
-        </div>
+        </article>
     `).join('');
 }
 
@@ -602,194 +1025,512 @@ function fecharHistorico() {
 }
 
 function limparHistorico() {
-    if (confirm('Tem certeza que quer apagar todo o histórico?')) {
+    abrirModal('Apagar histórico', 'Todos os resultados salvos serão removidos.', 'Apagar', () => {
         localStorage.removeItem(HIST_KEY);
+        gameState.matchSaved = false;
+        gameState.savedMatchId = null;
         abrirHistorico();
-    }
+        salvarEstado();
+    }, {
+        destructive: true
+    });
 }
 
-function verDetalhesPartida(id) {
-    const historico = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
-    const partida = historico.find(p => p.id === id);
-
+function verDetalhesPartida(id, resultadoFinal = false) {
+    const partida = carregarHistorico().find(item => Number(item.id) === Number(id));
     if (!partida) return;
 
-    let htmlDetalhes = '';
+    const html = montarHtmlPartida(partida);
+
+    if (resultadoFinal) {
+        abrirModalHtml('Resultado final', html, 'Nova partida', resetarTudo, {
+            cancelText: 'Continuar'
+        });
+    } else {
+        abrirModalHtml('Detalhes da partida', html, 'Fechar', null, {
+            hideCancel: true
+        });
+    }
+
+    requestAnimationFrame(() => desenharGraficoDaPartida(partida));
+}
+
+function montarHtmlPartida(partida) {
+    const modo = labelModo(partida.modo);
+    const vencedor = escapeHtml(partida.vencedor || 'Vencedor');
+    const placar = escapeHtml(partida.placar || '');
+    const subtitulo = `${escapeHtml(modo)} · ${escapeHtml(partida.data || '')}`;
 
     if (partida.modo === 'truco') {
-        // Detalhes Truco
-        if (partida.jogadores && partida.jogadores.length >= 2) {
-            htmlDetalhes = `
-                <div style="text-align:left; margin-top:10px;">
-                    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #333; padding:5px 0; margin-bottom:5px;">
-                        <span style="font-weight:bold; color: #ffffff;">${partida.jogadores[0].nome}</span>
-                        <span style="font-size:1.2em; color:#fff;">${partida.jogadores[0].pontos}</span>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #333; padding:5px 0;">
-                        <span style="font-weight:bold; color: #6b8e23;">${partida.jogadores[1].nome}</span>
-                        <span style="font-size:1.2em; color:#fff;">${partida.jogadores[1].pontos}</span>
-                    </div>
+        const rows = normalizarJogadoresTruco(partida).map(jogador => {
+            const venceu = jogador.nome === partida.vencedor;
+            return `
+                <div class="detail-row${venceu ? ' winner' : ''}">
+                    <span>${escapeHtml(jogador.nome)}</span>
+                    <span>${escapeHtml(jogador.pontos)}</span>
                 </div>
             `;
-        } else {
-            // Fallback para histórico antigo
-            htmlDetalhes = `<p style="color:#888;">Detalhes dos jogadores não disponíveis para esta partida antiga.</p>`;
-        }
-    } else {
-        // Detalhes Fodinha
-        if (partida.jogadores && partida.jogadores.length > 0) {
-            htmlDetalhes = `<div style="text-align:left; margin-top:10px; max-height:200px; overflow-y:auto;">`;
-            partida.jogadores.forEach(p => {
-                const isWinner = p.status === 'vencedor';
-                htmlDetalhes += `
-                    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333; ${isWinner ? 'color:#ffd700;' : 'color:#ccc;'}">
-                        <span>${isWinner ? '👑 ' : ''}${p.nome || 'Jogador'}</span>
-                        <span>${p.vidas_perdidas} vidas perdidas</span>
-                    </div>
-                `;
-            });
-            htmlDetalhes += `</div>`;
-        } else {
-            htmlDetalhes = `<p style="color:#888;">Detalhes dos jogadores não disponíveis para esta partida antiga.</p>`;
-        }
+        }).join('');
+
+        const chart = Array.isArray(partida.log) && partida.log.length > 1
+            ? `<canvas class="result-chart" id="chart-${Number(partida.id)}"></canvas>`
+            : '';
+
+        return `
+            <div class="result-hero">
+                <span class="result-subtitle">${subtitulo}</span>
+                <strong class="result-winner">${vencedor}</strong>
+                <span class="result-score">${placar}</span>
+            </div>
+            <div class="detail-list">${rows}</div>
+            ${montarHtmlResumoTruco(partida)}
+            ${montarHtmlRodadasTruco(partida)}
+            ${chart}
+        `;
     }
 
-    abrirModal(
-        `Detalhes da Partida`,
-        `Data: ${partida.data}\nModo: ${partida.modo.toUpperCase()}`,
-        'Fechar'
-    );
+    const rows = normalizarJogadoresFodinha(partida).map(jogador => {
+        const venceu = jogador.status === 'vencedor';
+        const status = venceu ? 'Venceu' : `${jogador.vidas_perdidas} perdidas`;
+        return `
+            <div class="detail-row${venceu ? ' winner' : ' eliminated'}">
+                <span>${escapeHtml(jogador.nome)}</span>
+                <span>${escapeHtml(status)}</span>
+            </div>
+        `;
+    }).join('');
 
-    // Injeta o HTML customizado
-    const msgEl = document.getElementById('modal-msg');
-    if (msgEl) {
-        msgEl.innerHTML = `<p style="margin-bottom:10px; color:#888;">${partida.data} - ${partida.modo.toUpperCase()}</p>` + htmlDetalhes;
+    return `
+        <div class="result-hero">
+            <span class="result-subtitle">${subtitulo}</span>
+            <strong class="result-winner">${vencedor}</strong>
+            <span class="result-score">${placar}</span>
+        </div>
+        <div class="detail-list">${rows}</div>
+    `;
+}
 
-        // Se tiver log e for Truco, desenha o gráfico
-        if (partida.modo === 'truco' && partida.log && partida.log.length > 1) {
-            const canvasId = `graph-${partida.id}`;
-            const canvasContainer = document.createElement('div');
-            canvasContainer.style.marginTop = '20px';
-            canvasContainer.style.width = '100%';
-            canvasContainer.style.height = '150px';
-            canvasContainer.innerHTML = `<canvas id="${canvasId}" width="280" height="150"></canvas>`;
+function montarHtmlResumoTruco(partida) {
+    const resumo = Array.isArray(partida.resumo) && partida.resumo.length
+        ? partida.resumo
+        : obterResumoTrucoPorCategoria(partida.rodadas || []);
 
-            msgEl.appendChild(canvasContainer);
+    if (!resumo.length) return '';
 
-            // Wait for render
-            requestAnimationFrame(() => {
-                const cvs = document.getElementById(canvasId);
-                if (cvs) desenharGrafico(cvs, partida.log, partida.detalhes.includes('30') ? 30 : (partida.detalhes.includes('24') ? 24 : 12));
-            });
-        }
+    return `
+        <div class="result-section-title">Origem dos pontos</div>
+        <div class="detail-list">
+            ${resumo.map(item => `
+                <div class="detail-row">
+                    <span>${escapeHtml(item.category)}</span>
+                    <span>${Number(item.team1) || 0} x ${Number(item.team2) || 0}</span>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function montarHtmlRodadasTruco(partida) {
+    const rounds = Array.isArray(partida.rodadas)
+        ? partida.rodadas.filter(round => Array.isArray(round.events) && round.events.length > 0)
+        : [];
+
+    if (!rounds.length) return '';
+
+    return `
+        <div class="result-section-title">Mãos da partida</div>
+        <div class="round-history-list">
+            ${rounds.map(round => `
+                <section class="round-history-item">
+                    <strong>Mão ${escapeHtml(round.number)}</strong>
+                    ${(round.events || []).map(event => `
+                        <div class="round-history-event">
+                            <span>${escapeHtml(event.label)} · ${escapeHtml(obterNomeTimePartida(partida, event.team))}</span>
+                            <strong>${formatarPontos(Number(event.points) || 0)}</strong>
+                        </div>
+                    `).join('')}
+                </section>
+            `).join('')}
+        </div>
+    `;
+}
+
+function obterNomeTimePartida(partida, time) {
+    if (Array.isArray(partida.jogadores) && partida.jogadores.length >= 2) {
+        return partida.jogadores[time === 1 ? 0 : 1]?.nome || (time === 1 ? 'NÓS' : 'ELES');
     }
+
+    return time === 1 ? 'NÓS' : 'ELES';
+}
+
+function normalizarJogadoresTruco(partida) {
+    if (Array.isArray(partida.jogadores) && partida.jogadores.length >= 2) {
+        return partida.jogadores.map((j, index) => ({
+            nome: j.nome || (index === 0 ? 'NÓS' : 'ELES'),
+            pontos: Number.isFinite(Number(j.pontos)) ? Number(j.pontos) : 0
+        }));
+    }
+
+    const partes = String(partida.placar || '0 x 0').split('x').map(p => parseInt(p, 10) || 0);
+    return [
+        { nome: 'NÓS', pontos: partes[0] || 0 },
+        { nome: 'ELES', pontos: partes[1] || 0 }
+    ];
+}
+
+function normalizarJogadoresFodinha(partida) {
+    if (!Array.isArray(partida.jogadores)) return [];
+
+    return partida.jogadores.map((j, index) => ({
+        nome: j.nome || `Jogador ${index + 1}`,
+        vidas_perdidas: Number.isFinite(Number(j.vidas_perdidas)) ? Number(j.vidas_perdidas) : 0,
+        status: j.status === 'vencedor' ? 'vencedor' : 'eliminado'
+    }));
+}
+
+function desenharGraficoDaPartida(partida) {
+    if (partida.modo !== 'truco' || !Array.isArray(partida.log) || partida.log.length < 2) return;
+    const canvas = document.getElementById(`chart-${Number(partida.id)}`);
+    if (!canvas) return;
+    desenharGrafico(canvas, partida.log, obterMetaPartida(partida));
 }
 
 function desenharGrafico(canvas, log, maxPontos) {
+    const rect = canvas.getBoundingClientRect();
+    const width = Math.max(280, rect.width || 320);
+    const height = Math.max(150, rect.height || 170);
+    const dpr = window.devicePixelRatio || 1;
     const ctx = canvas.getContext('2d');
-    const w = canvas.width;
-    const h = canvas.height;
-    const padding = 20;
+    const styles = getComputedStyle(document.documentElement);
+    const textColor = styles.getPropertyValue('--text-muted').trim() || '#6e6e73';
+    const gridColor = styles.getPropertyValue('--separator-strong').trim() || 'rgba(60,60,67,.28)';
+    const primaryLine = styles.getPropertyValue('--blue').trim() || '#c54848';
+    const secondaryLine = styles.getPropertyValue('--chart-secondary').trim() || '#6e6e73';
 
-    ctx.clearRect(0, 0, w, h);
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, height);
 
-    // Grid
-    ctx.strokeStyle = '#333';
+    const padding = 24;
+    const graphW = width - padding * 2;
+    const graphH = height - padding * 2;
+
+    ctx.strokeStyle = gridColor;
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(padding, padding); ctx.lineTo(padding, h - padding); // Y axis
-    ctx.moveTo(padding, h - padding); ctx.lineTo(w - padding, h - padding); // X axis
+    for (let i = 0; i <= 3; i++) {
+        const y = padding + (graphH / 3) * i;
+        ctx.moveTo(padding, y);
+        ctx.lineTo(width - padding, y);
+    }
     ctx.stroke();
 
-    if (!log || log.length < 2) return;
+    ctx.fillStyle = textColor;
+    ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('Nós', padding, 16);
+    ctx.fillStyle = primaryLine;
+    ctx.fillRect(padding + 28, 8, 16, 4);
+    ctx.fillStyle = textColor;
+    ctx.fillText('Eles', padding + 58, 16);
+    ctx.fillStyle = secondaryLine;
+    ctx.fillRect(padding + 92, 8, 16, 4);
 
-    const steps = log.length;
-    const xStep = (w - padding * 2) / (steps - 1);
-    const yScale = (h - padding * 2) / maxPontos;
+    drawLine('s1', primaryLine);
+    drawLine('s2', secondaryLine);
 
     function drawLine(key, color) {
+        const xStep = graphW / Math.max(1, log.length - 1);
+        const yScale = graphH / Math.max(1, maxPontos);
+
         ctx.beginPath();
         ctx.strokeStyle = color;
         ctx.lineWidth = 3;
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
 
-        log.forEach((pt, i) => {
-            const x = padding + i * xStep;
-            const val = pt[key] || 0;
-            const y = (h - padding) - (val * yScale);
-            if (i === 0) ctx.moveTo(x, y);
+        log.forEach((point, index) => {
+            const x = padding + index * xStep;
+            const y = height - padding - ((Number(point[key]) || 0) * yScale);
+            if (index === 0) ctx.moveTo(x, y);
             else ctx.lineTo(x, y);
         });
         ctx.stroke();
 
-        // Dots
         ctx.fillStyle = color;
-        log.forEach((pt, i) => {
-            const x = padding + i * xStep;
-            const val = pt[key] || 0;
-            const y = (h - padding) - (val * yScale);
+        log.forEach((point, index) => {
+            const x = padding + index * xStep;
+            const y = height - padding - ((Number(point[key]) || 0) * yScale);
             ctx.beginPath();
-            ctx.arc(x, y, 3, 0, Math.PI * 2);
+            ctx.arc(x, y, 3.2, 0, Math.PI * 2);
             ctx.fill();
         });
     }
-
-    drawLine('s1', '#ffffff'); // Time 1 (Nós - Branco)
-    drawLine('s2', '#6b8e23'); // Time 2 (Eles - Verde Musgo)
 }
 
-/* ================= HELPERS ================= */
+function abrirModal(titulo, mensagem, btnTxt = 'OK', callback = null, options = {}) {
+    const html = `<p>${escapeHtml(mensagem).replace(/\n/g, '<br>')}</p>`;
+    abrirModalHtml(titulo, html, btnTxt, callback, options);
+}
+
+function abrirModalHtml(titulo, html, btnTxt = 'OK', callback = null, options = {}) {
+    const modal = document.getElementById('custom-modal');
+    const titleEl = document.getElementById('modal-title');
+    const msgEl = document.getElementById('modal-msg');
+    const actions = modal?.querySelector('.modal-actions');
+    const oldConfirm = document.getElementById('modal-btn-confirm');
+    const oldCancel = document.getElementById('modal-btn-cancel');
+
+    if (!modal || !titleEl || !msgEl || !actions || !oldConfirm || !oldCancel) return;
+
+    const confirm = oldConfirm.cloneNode(true);
+    const cancel = oldCancel.cloneNode(true);
+    oldConfirm.replaceWith(confirm);
+    oldCancel.replaceWith(cancel);
+
+    titleEl.textContent = titulo;
+    msgEl.innerHTML = html;
+
+    confirm.textContent = btnTxt;
+    confirm.className = `modal-btn primary${options.destructive ? ' destructive' : ''}`;
+    confirm.onclick = () => {
+        if (typeof callback === 'function') callback();
+        fecharModal();
+    };
+
+    cancel.textContent = options.cancelText || 'Cancelar';
+    cancel.onclick = fecharModal;
+    cancel.classList.toggle('hidden', Boolean(options.hideCancel));
+    actions.classList.toggle('single', Boolean(options.hideCancel));
+
+    modal.classList.remove('hidden');
+    void modal.offsetWidth;
+    modal.classList.add('active');
+}
+
+function fecharModal() {
+    const modal = document.getElementById('custom-modal');
+    if (!modal) return;
+
+    modal.classList.remove('active');
+    setTimeout(() => modal.classList.add('hidden'), 190);
+}
+
+function removerResultadoAtualSePendente() {
+    if (!gameState.matchSaved || !gameState.savedMatchId) return;
+    removerHistoricoPorId(gameState.savedMatchId);
+    gameState.matchSaved = false;
+    gameState.savedMatchId = null;
+}
+
+function removerHistoricoPorId(id) {
+    const historico = carregarHistorico().filter(item => Number(item.id) !== Number(id));
+    localStorage.setItem(HIST_KEY, JSON.stringify(historico));
+}
+
+function carregarHistorico() {
+    try {
+        const historico = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+        return Array.isArray(historico) ? historico : [];
+    } catch (e) {
+        localStorage.removeItem(HIST_KEY);
+        return [];
+    }
+}
+
+function configurarModal() {
+    const btnCancel = document.getElementById('modal-btn-cancel');
+    if (btnCancel) btnCancel.onclick = fecharModal;
+
+    window.addEventListener('keydown', e => {
+        if (e.key === 'Escape') fecharModal();
+    });
+}
+
+function configurarInputsPersistentes() {
+    const time1 = document.getElementById('input-time1');
+    const time2 = document.getElementById('input-time2');
+    const vidas = document.getElementById('input-vidas-max');
+
+    if (time1) {
+        time1.addEventListener('input', () => {
+            gameState.truco.n1 = time1.value;
+            salvarEstado();
+        });
+    }
+
+    if (time2) {
+        time2.addEventListener('input', () => {
+            gameState.truco.n2 = time2.value;
+            salvarEstado();
+        });
+    }
+
+    if (vidas) {
+        vidas.addEventListener('input', () => {
+            gameState.fodinha.maxVidas = clamp(parseInt(vidas.value, 10) || 5, 1, 99);
+            salvarEstado();
+        });
+    }
+}
+
+function configurarAcessibilidadePlacar() {
+    [
+        ['card-time1', 1],
+        ['card-time2', 2]
+    ].forEach(([id, time]) => {
+        const card = document.getElementById(id);
+        if (!card || card.dataset.keyBound === '1') return;
+        card.dataset.keyBound = '1';
+        card.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                pontuarTap(time);
+            }
+        });
+    });
+}
+
+function registrarServiceWorker() {
+    if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
 function inputVal(id) {
     const el = document.getElementById(id);
-    return el ? el.value.trim() : '';
+    return el ? String(el.value || '').trim() : '';
 }
 
 function salvarEstado() {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
-    } catch (e) { }
+    } catch (e) {
+        console.warn('Não foi possível salvar o estado.', e);
+    }
 }
 
 function carregarEstado() {
     try {
-        const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
-        if (s) gameState = { ...gameState, ...s };
-    } catch (e) { localStorage.removeItem(STORAGE_KEY); }
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+        gameState = normalizarEstado(saved);
+    } catch (e) {
+        localStorage.removeItem(STORAGE_KEY);
+        gameState = estadoPadrao();
+    }
 }
 
-/* ================= EFEITOS (Confetti) ================= */
-let confettiCtx, confettiAnim, confettiAtivo = false;
+function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+}
+
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    })[char]);
+}
+
+function formatarData(date) {
+    return date.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function labelModo(modo) {
+    return modo === 'fodinha' ? 'Fodinha' : 'Truco';
+}
+
+function obterMetaPartida(partida) {
+    if (Number.isFinite(Number(partida.meta))) return Number(partida.meta);
+    const match = String(partida.detalhes || '').match(/\d+/);
+    return match ? Number(match[0]) : 12;
+}
+
+function vibrar(pattern) {
+    if ('vibrate' in navigator) navigator.vibrate(pattern);
+}
 
 function startConfetti() {
-    const c = document.getElementById('confetti-canvas');
-    if (!c || confettiAtivo) return;
-    confettiAtivo = true; c.style.display = 'block';
-    c.width = window.innerWidth; c.height = window.innerHeight;
-    confettiCtx = c.getContext('2d');
+    if (confettiAtivo) return;
+    const canvas = document.getElementById('confetti-canvas');
+    if (!canvas) return;
 
-    const p = Array.from({ length: 100 }, () => ({
-        x: Math.random() * c.width, y: Math.random() * -c.height,
-        color: ['#ff0', '#f00', '#0f0', '#00f', '#fff'][Math.floor(Math.random() * 5)],
-        s: Math.random() * 5 + 5, v: Math.random() * 5 + 2, w: Math.random() * 10
+    confettiAtivo = true;
+    canvas.style.display = 'block';
+    prepararConfettiCanvas();
+
+    const colors = ['#c54848', '#34c759', '#ff9f0a', '#ff3b30', '#ffffff'];
+    confettiParticles = Array.from({ length: 90 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * -canvas.height,
+        size: Math.random() * 5 + 4,
+        speed: Math.random() * 3 + 2,
+        drift: Math.random() * 1.6 - 0.8,
+        spin: Math.random() * Math.PI,
+        color: colors[Math.floor(Math.random() * colors.length)]
     }));
 
-    function loop() {
-        if (!confettiAtivo) return;
-        confettiCtx.clearRect(0, 0, c.width, c.height);
-        p.forEach(k => {
-            k.y += k.v; k.w += 0.1;
-            confettiCtx.fillStyle = k.color;
-            confettiCtx.fillRect(k.x + Math.sin(k.w) * 2, k.y, k.s, k.s);
-            if (k.y > c.height) k.y = -20;
-        });
-        confettiAnim = requestAnimationFrame(loop);
-    }
-    loop();
+    animarConfetti();
+}
+
+function prepararConfettiCanvas() {
+    const canvas = document.getElementById('confetti-canvas');
+    if (!canvas) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.floor(window.innerWidth * dpr);
+    canvas.height = Math.floor(window.innerHeight * dpr);
+    confettiCtx = canvas.getContext('2d');
+    confettiCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function animarConfetti() {
+    const canvas = document.getElementById('confetti-canvas');
+    if (!canvas || !confettiCtx || !confettiAtivo) return;
+
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    confettiCtx.clearRect(0, 0, width, height);
+
+    confettiParticles.forEach(particle => {
+        particle.y += particle.speed;
+        particle.x += particle.drift;
+        particle.spin += 0.08;
+
+        confettiCtx.save();
+        confettiCtx.translate(particle.x, particle.y);
+        confettiCtx.rotate(particle.spin);
+        confettiCtx.fillStyle = particle.color;
+        confettiCtx.fillRect(-particle.size / 2, -particle.size / 2, particle.size, particle.size * 0.58);
+        confettiCtx.restore();
+
+        if (particle.y > height + 20) {
+            particle.y = -20;
+            particle.x = Math.random() * width;
+        }
+    });
+
+    confettiAnim = requestAnimationFrame(animarConfetti);
 }
 
 function stopConfetti() {
-    confettiAtivo = false; cancelAnimationFrame(confettiAnim);
-    const c = document.getElementById('confetti-canvas');
-    if (c) { c.style.display = 'none'; if (confettiCtx) confettiCtx.clearRect(0, 0, c.width, c.height); }
+    confettiAtivo = false;
+    cancelAnimationFrame(confettiAnim);
+    confettiAnim = null;
+    confettiParticles = [];
+
+    const canvas = document.getElementById('confetti-canvas');
+    if (!canvas) return;
+
+    canvas.style.display = 'none';
+    if (confettiCtx) {
+        confettiCtx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    }
 }

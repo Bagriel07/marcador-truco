@@ -1,4 +1,4 @@
-const CACHE = 'truco-v46';
+const CACHE = 'truco-v50';
 
 const ASSETS = [
   './',
@@ -7,6 +7,9 @@ const ASSETS = [
   './style.css',
   './script.js',
   './manifest.json',
+  './logo-marcador.svg',
+  './icon-192.png',
+  './icon-512.png',
   './icon.png'
 ];
 
